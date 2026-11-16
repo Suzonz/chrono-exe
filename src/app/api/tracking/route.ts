@@ -4,6 +4,7 @@ import { handleError, parseBody } from "@/lib/api";
 import { applyTrackingAction } from "@/lib/tracking";
 import { broadcast, snapshotEvent } from "@/lib/sse";
 import { computePulse } from "@/lib/pulse";
+import { isLauncherManaged, scheduleShutdown } from "@/lib/launcher";
 import type { DashboardState } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -33,7 +34,10 @@ export async function GET(request: Request): Promise<NextResponse> {
   }
 }
 
-/** START / PAUSE / STOP from the dashboard or the extension popup. */
+/**
+ * START / PAUSE / STOP from the dashboard or the extension popup. When the
+ * extension started the server (native launcher), STOP also shuts it down.
+ */
 export async function POST(request: Request): Promise<NextResponse> {
   const parsed = await parseBody(request, postSchema);
   if (!parsed.ok) return parsed.response;
@@ -43,7 +47,12 @@ export async function POST(request: Request): Promise<NextResponse> {
     await applyTrackingAction(parsed.data.action, page);
     const event = await snapshotEvent();
     broadcast(event);
-    return NextResponse.json(event.data);
+    const serverStopping = parsed.data.action === "stop" && isLauncherManaged();
+    if (serverStopping) {
+      broadcast({ type: "SERVER_STOPPED", data: { message: "Server stopped" }, timestamp: new Date().toISOString() });
+      scheduleShutdown();
+    }
+    return NextResponse.json(serverStopping ? { ...(event.data as DashboardState), serverStopping } : event.data);
   } catch (error) {
     return handleError(error, "tracking.post");
   }

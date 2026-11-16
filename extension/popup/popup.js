@@ -36,6 +36,10 @@ let snapshot = null;
 let receivedAt = 0;
 let apiUrl = null;
 let busy = false;
+/** Server not running. With the launcher installed, play starts it. */
+let serverOff = false;
+let canBoot = false;
+let booting = false;
 function $(id) {
     const element = document.getElementById(id);
     if (!element)
@@ -71,17 +75,28 @@ function apply(reply) {
         $("status").className = "ok";
     }
     else {
+        snapshot = null;
+        serverOff = reply.off === true;
+        canBoot = reply.launcher === true;
         showError(reply.error);
-        $("status").textContent = "NOT FOUND";
-        $("status").className = "err";
+        $("status").textContent = serverOff ? "OFF" : "NOT FOUND";
+        $("status").className = serverOff && canBoot ? "" : "err";
     }
+    if (reply.ok)
+        serverOff = false;
     render();
 }
 function render() {
     const state = snapshot?.tracking.state ?? "STOPPED";
     const css = state === "RUNNING" ? "running" : state === "PAUSED" ? "paused" : "";
     const stateLabel = $("state");
-    stateLabel.innerHTML = snapshot ? `${icon(state === "RUNNING" ? "play" : state === "PAUSED" ? "pause" : "stop")}<span>${state}</span>` : "...";
+    stateLabel.innerHTML = snapshot
+        ? `${icon(state === "RUNNING" ? "play" : state === "PAUSED" ? "pause" : "stop")}<span>${state}</span>`
+        : booting
+            ? "<span>BOOTING...</span>"
+            : serverOff
+                ? `${icon("stop")}<span>OFF</span>`
+                : "...";
     stateLabel.className = css;
     // Stopwatch: accumulated time + current running stretch (ticks locally).
     let seconds = snapshot?.tracking.accumulatedSeconds ?? 0;
@@ -103,7 +118,11 @@ function render() {
         swatch.hidden = false;
     }
     else {
-        name.textContent = state === "PAUSED" ? "PAUSED" : state === "RUNNING" ? "WAITING..." : "READY";
+        name.textContent = booting
+            ? "STARTING SERVER..."
+            : !snapshot && serverOff
+                ? canBoot ? "PRESS PLAY" : "SERVER OFF"
+                : state === "PAUSED" ? "PAUSED" : state === "RUNNING" ? "WAITING..." : "READY";
         name.style.color = "";
         swatch.hidden = true;
     }
@@ -118,8 +137,9 @@ function render() {
     toggle.setAttribute("aria-label", toggleLabel);
     toggle.title = toggleLabel;
     toggle.className = state === "RUNNING" ? "pause" : "";
-    toggle.disabled = busy || !snapshot;
+    toggle.disabled = busy || (!snapshot && !(serverOff && canBoot));
     $("stop").disabled = busy || !snapshot || state === "STOPPED";
+    $("open").disabled = !snapshot;
     $("total").textContent = formatDuration(snapshot?.totalTrackedSeconds ?? 0);
     const site = snapshot?.pulse?.site;
     $("site-name").textContent = site ? site.host : "This site";
@@ -134,9 +154,13 @@ async function refresh() {
 }
 async function control(action) {
     busy = true;
+    booting = action === "start" && !snapshot;
+    if (booting)
+        $("status").textContent = "STARTING...";
     render();
     const reply = await send({ type: "chrono:control", action });
     busy = false;
+    booting = false;
     apply(reply);
 }
 // Big icon-only buttons: ▶/❚❚ toggle + ■ (labels live in aria-label / title).
@@ -144,6 +168,8 @@ $("stop").innerHTML = icon("stop");
 $("toggle").addEventListener("click", () => void control(snapshot?.tracking.state === "RUNNING" ? "pause" : "start"));
 $("stop").addEventListener("click", () => void control("stop"));
 $("open").addEventListener("click", () => {
+    if (!snapshot)
+        return;
     void chrome.tabs.create({ url: apiUrl ?? "http://localhost:3000" });
 });
 $("config").addEventListener("submit", (event) => {
@@ -156,6 +182,9 @@ void chrome.storage.local.get("apiUrl").then(({ apiUrl: saved }) => {
         $("api-url").value = saved;
 });
 window.setInterval(render, 1000);
-window.setInterval(() => void refresh(), 5000);
+window.setInterval(() => {
+    if (!busy)
+        void refresh();
+}, 5000);
 void refresh();
 export {};

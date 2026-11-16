@@ -2,7 +2,7 @@ import type { Config } from "jest";
 
 const config: Config = {
   testEnvironment: "node",
-  testPathIgnorePatterns: ["/node_modules/", "/.next/"],
+  testPathIgnorePatterns: ["/node_modules/", "/.next/", "/.next-app/"],
   // The integration test shares one SQLite file.
   maxWorkers: 1,
   collectCoverageFrom: ["src/lib/**/*.ts", "src/app/api/**/*.ts"],

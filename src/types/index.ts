@@ -126,7 +126,7 @@ export type HeartbeatResponse = (
 
 // ─── Real-time (SSE) ────────────────────────────────────────────────
 
-export type SSEEventType = "DASHBOARD_UPDATE" | "DB_UNREACHABLE";
+export type SSEEventType = "DASHBOARD_UPDATE" | "DB_UNREACHABLE" | "SERVER_STOPPED";
 
 export interface SSEEvent<T = unknown> {
   type: SSEEventType;

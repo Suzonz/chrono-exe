@@ -18,7 +18,9 @@
     "build:extension": "tsc -p extension/tsconfig.json",
     "icons": "node scripts/generate-icons.mjs",
     "db:reset": "prisma migrate reset --force --skip-seed && npm run db:seed",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "launcher:install": "node scripts/launcher.mjs install",
+    "launcher:uninstall": "node scripts/launcher.mjs uninstall"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

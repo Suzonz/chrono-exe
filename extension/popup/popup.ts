@@ -19,7 +19,9 @@ interface Snapshot {
   } | null;
 }
 
-type Reply = { ok: true; data: Snapshot; apiUrl: string } | { ok: false; error: string };
+type Reply =
+  | { ok: true; data: Snapshot; apiUrl: string }
+  | { ok: false; error: string | null; off?: boolean; launcher?: boolean };
 
 const PALETTE: Record<string, string> = {
   violet: "#a78bfa",
@@ -58,6 +60,10 @@ let snapshot: Snapshot | null = null;
 let receivedAt = 0;
 let apiUrl: string | null = null;
 let busy = false;
+/** Server not running. With the launcher installed, play starts it. */
+let serverOff = false;
+let canBoot = false;
+let booting = false;
 
 function $(id: string): HTMLElement {
   const element = document.getElementById(id);
@@ -96,10 +102,14 @@ function apply(reply: Reply): void {
     $("status").textContent = "CONNECTED";
     $("status").className = "ok";
   } else {
+    snapshot = null;
+    serverOff = reply.off === true;
+    canBoot = reply.launcher === true;
     showError(reply.error);
-    $("status").textContent = "NOT FOUND";
-    $("status").className = "err";
+    $("status").textContent = serverOff ? "OFF" : "NOT FOUND";
+    $("status").className = serverOff && canBoot ? "" : "err";
   }
+  if (reply.ok) serverOff = false;
   render();
 }
 
@@ -108,7 +118,13 @@ function render(): void {
   const css = state === "RUNNING" ? "running" : state === "PAUSED" ? "paused" : "";
 
   const stateLabel = $("state");
-  stateLabel.innerHTML = snapshot ? `${icon(state === "RUNNING" ? "play" : state === "PAUSED" ? "pause" : "stop")}<span>${state}</span>` : "...";
+  stateLabel.innerHTML = snapshot
+    ? `${icon(state === "RUNNING" ? "play" : state === "PAUSED" ? "pause" : "stop")}<span>${state}</span>`
+    : booting
+      ? "<span>BOOTING...</span>"
+      : serverOff
+        ? `${icon("stop")}<span>OFF</span>`
+        : "...";
   stateLabel.className = css;
 
   // Stopwatch: accumulated time + current running stretch (ticks locally).
@@ -131,7 +147,11 @@ function render(): void {
     swatch.style.backgroundColor = color;
     swatch.hidden = false;
   } else {
-    name.textContent = state === "PAUSED" ? "PAUSED" : state === "RUNNING" ? "WAITING..." : "READY";
+    name.textContent = booting
+      ? "STARTING SERVER..."
+      : !snapshot && serverOff
+        ? canBoot ? "PRESS PLAY" : "SERVER OFF"
+        : state === "PAUSED" ? "PAUSED" : state === "RUNNING" ? "WAITING..." : "READY";
     name.style.color = "";
     swatch.hidden = true;
   }
@@ -147,8 +167,9 @@ function render(): void {
   toggle.setAttribute("aria-label", toggleLabel);
   toggle.title = toggleLabel;
   toggle.className = state === "RUNNING" ? "pause" : "";
-  toggle.disabled = busy || !snapshot;
+  toggle.disabled = busy || (!snapshot && !(serverOff && canBoot));
   ($("stop") as HTMLButtonElement).disabled = busy || !snapshot || state === "STOPPED";
+  ($("open") as HTMLButtonElement).disabled = !snapshot;
 
   $("total").textContent = formatDuration(snapshot?.totalTrackedSeconds ?? 0);
 
@@ -168,9 +189,12 @@ async function refresh(): Promise<void> {
 
 async function control(action: "start" | "pause" | "stop"): Promise<void> {
   busy = true;
+  booting = action === "start" && !snapshot;
+  if (booting) $("status").textContent = "STARTING...";
   render();
   const reply = await send({ type: "chrono:control", action });
   busy = false;
+  booting = false;
   apply(reply);
 }
 
@@ -180,6 +204,7 @@ $("toggle").addEventListener("click", () => void control(snapshot?.tracking.stat
 $("stop").addEventListener("click", () => void control("stop"));
 
 $("open").addEventListener("click", () => {
+  if (!snapshot) return;
   void chrome.tabs.create({ url: apiUrl ?? "http://localhost:3000" });
 });
 
@@ -194,5 +219,7 @@ void chrome.storage.local.get("apiUrl").then(({ apiUrl: saved }) => {
 });
 
 window.setInterval(render, 1000);
-window.setInterval(() => void refresh(), 5000);
+window.setInterval(() => {
+  if (!busy) void refresh();
+}, 5000);
 void refresh();

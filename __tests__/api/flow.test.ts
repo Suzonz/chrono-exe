@@ -182,9 +182,22 @@ describe("settings routes", () => {
     expect((await call(stats.GET, "GET", "/api/stats?period=year&date=nope")).status).toBe(400);
   });
 
-  it("stops tracking and answers the health check", async () => {
+  it("stops tracking, and shuts the server down when the launcher started it", async () => {
+    process.env.CHRONO_LAUNCHER = "1";
+    const exit = jest.spyOn(process, "exit").mockImplementation(() => undefined as never);
     const stopped = await tracking.POST(new Request(`${BASE}/api/tracking`, json("POST", { action: "stop" })));
-    expect(((await stopped.json()) as { tracking: { state: string; accumulatedSeconds: number } }).tracking).toMatchObject({ state: "STOPPED", accumulatedSeconds: 0 });
+    const body = (await stopped.json()) as { serverStopping?: boolean; tracking: { state: string; accumulatedSeconds: number } };
+    expect(body.tracking).toMatchObject({ state: "STOPPED", accumulatedSeconds: 0 });
+    expect(body.serverStopping).toBe(true);
+    const store = globalThis as { __chronoShutdown?: ReturnType<typeof setTimeout> };
+    expect(store.__chronoShutdown).toBeDefined();
+    clearTimeout(store.__chronoShutdown);
+    delete store.__chronoShutdown;
+    delete process.env.CHRONO_LAUNCHER;
+    exit.mockRestore();
+  });
+
+  it("answers the health check and the popup status", async () => {
     const status = await tracking.GET(new Request(`${BASE}/api/tracking?url=https://github.com/x`));
     expect(((await status.json()) as { pulse: { site: { host: string } } }).pulse.site.host).toBe("github.com");
     const health = await (await import("@/app/api/health/route")).GET();

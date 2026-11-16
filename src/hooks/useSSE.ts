@@ -9,6 +9,8 @@ export interface SSEState {
   dashboardState: DashboardState | null;
   connectionStatus: ConnectionStatus;
   dbUnreachable: boolean;
+  /** The server shut down after STOP (it was started by the extension). */
+  serverStopped: boolean;
   /** Seconds before the next reconnection attempt, while reconnecting. */
   retryIn: number | null;
   /** Increments on every DASHBOARD_UPDATE so pages can refetch. */
@@ -29,12 +31,14 @@ export function useSSE(): SSEState {
   const [dashboardState, setDashboardState] = useState<DashboardState | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connecting");
   const [dbUnreachable, setDbUnreachable] = useState(false);
+  const [serverStopped, setServerStopped] = useState(false);
   const [retryAt, setRetryAt] = useState<number | null>(null);
   const [retryIn, setRetryIn] = useState<number | null>(null);
   const [revision, setRevision] = useState(0);
   const [receivedAt, setReceivedAt] = useState<number | null>(null);
   const [attempt, setAttempt] = useState(0);
   const backoffRef = useRef(INITIAL_BACKOFF_MS);
+  const stoppedRef = useRef(false);
 
   useEffect(() => {
     let disposed = false;
@@ -46,6 +50,8 @@ export function useSSE(): SSEState {
       backoffRef.current = INITIAL_BACKOFF_MS;
       setRetryAt(null);
       setConnectionStatus("connected");
+      stoppedRef.current = false;
+      setServerStopped(false);
     };
 
     source.addEventListener("DASHBOARD_UPDATE", (event) => {
@@ -56,6 +62,11 @@ export function useSSE(): SSEState {
       setRevision((value) => value + 1);
     });
 
+    source.addEventListener("SERVER_STOPPED", () => {
+      stoppedRef.current = true;
+      setServerStopped(true);
+    });
+
     source.addEventListener("DB_UNREACHABLE", () => {
       setDbUnreachable(true);
     });
@@ -64,7 +75,8 @@ export function useSSE(): SSEState {
       if (disposed) return;
       source.close();
       const delay = backoffRef.current;
-      backoffRef.current = Math.min(delay * 2, MAX_BACKOFF_MS);
+      // After STOP the server comes back when play is pressed: keep checking every 5s.
+      backoffRef.current = stoppedRef.current ? INITIAL_BACKOFF_MS : Math.min(delay * 2, MAX_BACKOFF_MS);
       setConnectionStatus("reconnecting");
       setRetryAt(Date.now() + delay);
       timer = window.setTimeout(() => setAttempt((value) => value + 1), delay);
@@ -94,5 +106,5 @@ export function useSSE(): SSEState {
     setAttempt((value) => value + 1);
   }, []);
 
-  return { dashboardState, connectionStatus, dbUnreachable, retryIn, revision, receivedAt, reconnect };
+  return { dashboardState, connectionStatus, dbUnreachable, serverStopped, retryIn, revision, receivedAt, reconnect };
 }

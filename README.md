@@ -63,6 +63,7 @@ Everything runs on your own computer, and the database is a single local file. N
 - **Badge:** the toolbar icon shows today's active time (`3h4`, `45m`) in a different color for each state.
 - **Popup:** today's total, time spent on the current site, and any limit warnings.
 - **Setup:** it finds the local server on its own (it scans common ports through `/api/health`).
+- **One-click server (Windows):** with the native launcher installed, play starts the server in the background and stop shuts it down. Pause keeps it running. No terminal to keep open.
 
 **Privacy**
 - Addresses are stored without query strings or fragments, and page titles are never stored.
@@ -134,6 +135,26 @@ npm run db:demo             # add "-- --reset" to wipe existing activity first
 
 The extension only has host permissions for `localhost` and `127.0.0.1`. Time spent on the CHRONO.EXE tab itself shows up as "CHRONO.EXE dashboard" in top sites.
 
+### Daily use: start the server from the extension (Windows)
+
+Chrome extensions cannot start programs, so by default the server must already be running (`npm run dev`). The native launcher removes that step:
+
+```bash
+npm run launcher:install     # builds the app, registers the launcher with Chrome (current user, no admin)
+```
+
+Then reload the extension in `chrome://extensions`. From now on:
+
+| You press | What happens |
+| --- | --- |
+| ▶ play (server off) | The popup shows `BOOTING...`, the server starts in the background on `127.0.0.1:3005` (about 1s), recording begins |
+| ❚❚ pause | Recording pauses, the server keeps running so the dashboard stays available |
+| ■ stop | Recording stops and the server shuts down. An open dashboard shows `SERVER OFF` and reconnects by itself on the next play |
+
+How it works: the extension calls [`chrome.runtime.sendNativeMessage`](https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging). Chrome runs `launcher/host.mjs`, which starts `next start` detached (production build in `.next-app/`, so it never clashes with `next dev`) with `CHRONO_LAUNCHER=1`. Only a server started this way stops itself on stop; `npm run dev` is never shut down. Only this extension may call the launcher: the manifest has a fixed `key`, so its ID is stable, and the launcher allows that ID only. Server output goes to `launcher/server.log`.
+
+Run `npm run launcher:install` again after changing the code (it rebuilds), and `npm run launcher:uninstall` to remove it.
+
 ## Scripts
 
 | Script | What it does |
@@ -147,6 +168,7 @@ The extension only has host permissions for `localhost` and `127.0.0.1`. Time sp
 | `npm test` / `test:coverage` | Unit and integration tests / with the coverage threshold |
 | `npm run lint` / `typecheck` | ESLint / TypeScript for the app and the extension |
 | `npm run build:extension` | Compile the extension TypeScript |
+| `npm run launcher:install` / `launcher:uninstall` | Let the extension start and stop the server (Windows) |
 | `npm run icons` | Regenerate the pixel-art icons (no image dependency) |
 | `node scripts/screenshots.mjs <url>` | Capture the README screenshots with your installed Chrome |
 
@@ -179,6 +201,7 @@ src/
   lib/            glob, categorizer, sessionLogic, sessionManager, aggregate, stats, summary, sse, time
   types/          shared domain and API types
 extension/        Chrome MV3 extension (background service worker + popup)
+launcher/         native messaging host: starts the server when play is pressed
 prisma/           schema, migrations, seed, demo data
 __tests__/        unit tests (lib) and integration tests (api)
 docs/             PRD, architecture, UI guidelines, screenshots

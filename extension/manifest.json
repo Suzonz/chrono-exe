@@ -2,14 +2,16 @@
   "manifest_version": 3,
   "name": "CHRONO.EXE",
   "description": "Passive time-tracking sensor for the CHRONO.EXE dashboard. Sends a heartbeat every 30s to your local server.",
-  "version": "1.1.0",
+  "version": "1.2.0",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAs8hmLEh++QWkgIKn4OCFxEhzdQJM8y9te2o/NIJ466N8yH/i1b26p6LZNicPykG2x676BO4EmUxQObYMdH1owIEj/Z4i05+3Qr4axrzVfq85TzXkxBgNxzdVblgNRXCPgtxLESZYA3ywmZEeSNpvg2w3U6Ekn9KOBXGYBWxJtpHJgNtZ4P6ZyS/PQm1xlW8l7YKUM4Rc9A/qkQsowlrNPxycEF2cv8CyDG+JlL0FQqh9Bu3N31V66lUv+TbRh0lhjUNqHnp6oHDBA+MT5/3aqWhNbUw6cu84yAgfEH+W/s13Tt+rM2aNg3UVwATe+SI8KVfVUXU9rSJxynD2Ibs9NQIDAQAB",
   "minimum_chrome_version": "116",
   "permissions": [
     "tabs",
     "idle",
     "storage",
     "alarms",
-    "notifications"
+    "notifications",
+    "nativeMessaging"
   ],
   "host_permissions": [
     "http://localhost/*",

@@ -62,7 +62,8 @@ async function applyPulse(state, pulse) {
         await notifyLimits(pulse.limitAlerts);
 }
 /** Ports scanned when the configured endpoint is not a CHRONO.EXE server. */
-const CANDIDATE_URLS = [3000, 3001, 3002, 3003, 3005, 3010, 4000, 5000, 8000, 8080].map((port) => `http://localhost:${port}`);
+const LAUNCHER_URL = "http://127.0.0.1:3005";
+const CANDIDATE_URLS = [LAUNCHER_URL, ...[3000, 3001, 3002, 3003, 3005, 3010, 4000, 5000, 8000, 8080].map((port) => `http://localhost:${port}`)];
 async function getApiUrl() {
     const { apiUrl } = await chrome.storage.local.get("apiUrl");
     const value = typeof apiUrl === "string" && apiUrl.trim() ? apiUrl.trim() : DEFAULT_API_URL;
@@ -280,11 +281,69 @@ chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
         scheduleHeartbeat();
 });
 chrome.windows.onFocusChanged.addListener(() => scheduleHeartbeat());
+// ─── Native launcher: start the server when play is pressed ─────────
+// Extensions cannot start programs. The launcher (launcher/host.mjs, installed
+// with `npm run launcher:install`) is a small program Chrome runs for us.
+const LAUNCHER = "com.chrono_exe.launcher";
+const BOOT_TIMEOUT_MS = 45000;
+/** null when the launcher is not installed. */
+function askLauncher(message) {
+    return new Promise((resolve) => {
+        try {
+            chrome.runtime.sendNativeMessage(LAUNCHER, message, (reply) => {
+                resolve(chrome.runtime.lastError || !reply ? null : reply);
+            });
+        }
+        catch {
+            resolve(null);
+        }
+    });
+}
+/** Cached for the browser session: pinging spawns a process. */
+async function hasLauncher() {
+    const { launcher } = await chrome.storage.session.get("launcher");
+    if (typeof launcher === "boolean")
+        return launcher;
+    const available = (await askLauncher({ action: "ping" }))?.ok === true;
+    await chrome.storage.session.set({ launcher: available });
+    return available;
+}
+async function bootServer() {
+    const reply = await askLauncher({ action: "start" });
+    await chrome.storage.session.set({ launcher: reply !== null });
+    if (!reply)
+        return { error: "SERVER OFF. RUN npm run launcher:install ONCE (OR npm run dev)." };
+    if (!reply.ok || !reply.url) {
+        return { error: reply.error === "NOT_BUILT" ? "APP NOT BUILT. RUN npm run launcher:install." : `LAUNCHER ERROR: ${reply.error ?? "UNKNOWN"}` };
+    }
+    const deadline = Date.now() + BOOT_TIMEOUT_MS;
+    while (Date.now() < deadline) {
+        if (await isChronoServer(reply.url)) {
+            await chrome.storage.local.set({ apiUrl: reply.url });
+            return { url: reply.url };
+        }
+        await sleep(700);
+    }
+    return { error: "THE SERVER DID NOT START. SEE launcher/server.log." };
+}
 async function callTracking(action) {
-    const apiUrl = await discoverApiUrl(await getApiUrl());
+    let apiUrl = await discoverApiUrl(await getApiUrl());
+    if (!apiUrl && action === "start") {
+        await chrome.storage.session.set({ booting: true });
+        const booted = await bootServer();
+        await chrome.storage.session.remove("booting");
+        if ("error" in booted) {
+            await chrome.storage.local.set({ connectionStatus: "disconnected", lastError: booted.error });
+            return { ok: false, error: booted.error, off: true, launcher: (await chrome.storage.session.get("launcher")).launcher === true };
+        }
+        apiUrl = booted.url;
+    }
     if (!apiUrl) {
-        await chrome.storage.local.set({ connectionStatus: "disconnected", lastError: "SERVER NOT FOUND" });
-        return { ok: false, error: "SERVER NOT FOUND. IS THE CHRONO.EXE SERVER RUNNING?" };
+        // Server off. With the launcher installed this is normal: play starts it.
+        const launcher = await hasLauncher();
+        await chrome.storage.local.set({ connectionStatus: "disconnected", lastError: "SERVER OFF" });
+        await updateBadge("STOPPED", 0);
+        return { ok: false, off: true, launcher, error: launcher ? null : "SERVER OFF. RUN npm run launcher:install ONCE (OR npm run dev)." };
     }
     try {
         const tab = await getActiveTab();

@@ -17,8 +17,17 @@ function Banner({ tone, title, children }: { tone: "error" | "warn"; title: stri
 
 /** Global error screens: connection lost, database down, extension offline. */
 export function StatusBanner() {
-  const { connectionStatus, dbUnreachable, retryIn, reconnect } = useLive();
+  const { connectionStatus, dbUnreachable, serverStopped, retryIn, reconnect } = useLive();
   const { extensionOnline, ready, lastHeartbeatAt, trackingState } = useDashboard();
+
+  // Expected: STOP shut the server down. Not an error.
+  if (serverStopped && connectionStatus === "reconnecting") {
+    return (
+      <Banner tone="warn" title="SERVER OFF">
+        Recording stopped and the server shut down. Press play in the extension to start it again: this page reconnects on its own.
+      </Banner>
+    );
+  }
 
   if (connectionStatus === "reconnecting") {
     return (

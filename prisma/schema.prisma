@@ -1,0 +1,102 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+/// SQLite: the whole database is a single local file (prisma/chrono.db).
+/// No server to install, nothing leaves your machine.
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id                String      @id @default(cuid())
+  name              String      @unique
+  color             String
+  isDefault         Boolean     @default(false)
+  order             Int         @default(0)
+  /// PRODUCTIVE | NEUTRAL | DISTRACTING — drives the productivity score.
+  productivity      String      @default("NEUTRAL")
+  /// Optional daily limit; the extension notifies when it is exceeded.
+  dailyLimitSeconds Int?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  rules             Rule[]
+  sessions          Session[]
+  heartbeats        Heartbeat[]
+
+  @@index([order])
+}
+
+model Rule {
+  id         String   @id @default(cuid())
+  pattern    String
+  categoryId String
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([order])
+  @@index([categoryId])
+}
+
+model Session {
+  id              String      @id @default(cuid())
+  categoryId      String
+  startedAt       DateTime
+  endedAt         DateTime?
+  durationSeconds Int         @default(0)
+  isIdle          Boolean     @default(false)
+  heartbeatCount  Int         @default(0)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  category        Category    @relation(fields: [categoryId], references: [id])
+  heartbeats      Heartbeat[]
+
+  @@index([startedAt])
+  @@index([categoryId])
+  @@index([isIdle])
+}
+
+model Heartbeat {
+  id              String   @id @default(cuid())
+  /// Address without query string or fragment (privacy).
+  url             String
+  /// Kept empty: page titles can contain private data and are not used.
+  title           String   @default("")
+  categoryId      String
+  sessionId       String
+  isIdle          Boolean  @default(false)
+  idleSeconds     Int      @default(0)
+  /// Sites playing sound in background tabs, comma-separated hosts.
+  backgroundAudio String?
+  timestamp       DateTime
+  createdAt       DateTime @default(now())
+  category        Category @relation(fields: [categoryId], references: [id])
+  session         Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, timestamp])
+  @@index([timestamp])
+  @@index([sessionId])
+}
+
+model Settings {
+  id                     String    @id @default(cuid())
+  /// Daily goal of PRODUCTIVE time (default 4h).
+  dailyGoalSeconds       Int       @default(14400)
+  inactivityDelaySeconds Int       @default(300)
+  /// RUNNING | PAUSED | STOPPED — controlled by the play / pause / stop buttons.
+  trackingState          String    @default("STOPPED")
+  /// Start of the current running stretch (null while paused or stopped).
+  runStartedAt           DateTime?
+  /// Stopwatch time accumulated before the current stretch (kept across pauses).
+  runAccumulatedSeconds  Int       @default(0)
+  updatedAt              DateTime  @updatedAt
+}
+
+model IgnorePattern {
+  id        String   @id @default(cuid())
+  pattern   String   @unique
+  createdAt DateTime @default(now())
+}

@@ -1,0 +1,13 @@
+# CHRONO.EXE — Cursor Rules
+# ============================================================
+# These rules govern ALL code Cursor generates in this project.
+# Read ARCHITECTURE.md before implementing any feature.
+# Read PRD.md before implementing any behavior.
+# ============================================================
+
+## 0. PRIME DIRECTIVE
+
+Cursor implements ONLY what is explicitly defined in docs/ARCHITECTURE.md.
+If a file, function, component, or behavior is not described there, do NOT create it.
+If clarification is needed, ask — do not invent.
+

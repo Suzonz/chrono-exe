@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: #15121b;
+  color: #e8dfee;
+  margin: 0;
+}
+
+::selection {
+  background: #7c3aed;
+  color: #ffffff;
+}
+
+:focus-visible {
+  outline: 2px solid #15ffd1;
+  outline-offset: 2px;
+}
+
+/* Subtle CRT scanlines over the whole UI. */
+.scanline-overlay {
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.18) 50%),
+    linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.015), rgba(0, 0, 255, 0.04));
+  background-size: 100% 4px, 3px 100%;
+  pointer-events: none;
+  z-index: 100;
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.animate-blink {
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes pulse-border {
+  0%,
+  100% {
+    border-color: #7c3aed;
+  }
+  50% {
+    border-color: #ffb4ab;
+  }
+}
+
+.animate-pulse-border {
+  animation: pulse-border 1.2s ease-in-out infinite;
+}
+
+input[type="range"] {
+  accent-color: #7c3aed;
+}
+
+/* Square, terminal-styled scrollbars. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #4a4455 #100d16;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-blink,
+  .animate-pulse-border {
+    animation: none;
+  }
+}
+
+/* Grid items default to min-width:auto, which lets wide tables push the
+   whole layout past the viewport on phones. Let them shrink instead. */
+.grid > * {
+  min-width: 0;
+}

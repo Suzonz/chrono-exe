@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CHRONO.EXE</title>
+    <style>
+      /* Press Start 2P, SIL Open Font License 1.1 (bundled so the popup works offline). */
+      @font-face {
+        font-family: "Press Start 2P";
+        src: url("../fonts/press-start-2p.woff2") format("woff2");
+        font-display: block;
+      }
+      :root {
+        color-scheme: dark;
+        --bg: #15121b;
+        --panel: #2c2833;
+        --border: #7c3aed;
+        --muted: #958da1;
+        --text: #e8dfee;
+        --cyan: #15ffd1;
+        --amber: #ffb784;
+        --err: #ffb4ab;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        width: 300px;
+        background: var(--bg);
+        color: var(--text);
+        font: 9px/1.6 "Press Start 2P", "Consolas", monospace;
+        -webkit-font-smoothing: none;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border);
+        background: #221e28;
+      }
+      header img {
+        width: 20px;
+        height: 20px;
+        image-rendering: pixelated;
+      }
+      header strong {
+        color: #d2bbff;
+      }
+      #state {
+        margin-left: auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 8px;
+        color: var(--muted);
+      }
+      #state svg {
+        width: 8px;
+        height: 8px;
+        fill: currentColor;
+        shape-rendering: crispEdges;
+      }
+      #state.running {
+        color: var(--cyan);
+      }
+      #state.paused {
+        color: var(--amber);
+      }
+      main {
+        padding: 12px;
+        display: grid;
+        gap: 10px;
+      }
+      .timer {
+        padding: 14px 8px 10px;
+        text-align: center;
+        background: var(--panel);
+        border: 1px solid var(--border);
+      }
+      #clock {
+        font-size: 26px;
+        line-height: 1.2;
+        color: var(--muted);
+      }
+      #clock.running {
+        color: var(--cyan);
+      }
+      #clock.paused {
+        color: var(--amber);
+      }
+      #category {
+        margin-top: 8px;
+        font-size: 10px;
+        color: var(--muted);
+      }
+      #swatch {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        margin-right: 6px;
+      }
+      .controls {
+        display: grid;
+        grid-template-columns: repeat(2, 64px);
+        justify-content: center;
+        gap: 16px;
+        padding: 4px 5px 9px 0;
+      }
+      button {
+        font: inherit;
+        cursor: pointer;
+        padding: 9px 10px;
+        border: 2px solid var(--border);
+        background: transparent;
+        color: var(--text);
+        text-transform: uppercase;
+      }
+      /* Arcade buttons: hard shadow, sink into it when pressed. */
+      .controls button {
+        display: grid;
+        place-items: center;
+        width: 64px;
+        height: 64px;
+        padding: 0;
+        box-shadow: 5px 5px 0 0 #000;
+        transition: transform 60ms, box-shadow 60ms;
+      }
+      .controls button:active:not(:disabled) {
+        transform: translate(5px, 5px);
+        box-shadow: none;
+      }
+      .controls svg {
+        width: 30px;
+        height: 30px;
+        shape-rendering: crispEdges;
+        fill: currentColor;
+      }
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.25;
+      }
+      #toggle {
+        background: var(--cyan);
+        border-color: var(--cyan);
+        color: #00382c;
+      }
+      #toggle.pause {
+        background: var(--amber);
+        border-color: var(--amber);
+        color: #4f2500;
+      }
+      #stop {
+        background: #93000a;
+        border-color: var(--err);
+        color: #ffdad6;
+      }
+      button:disabled {
+        box-shadow: none;
+      }
+      button:hover:not(:disabled) {
+        filter: brightness(1.15);
+      }
+      .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 8px;
+        border: 1px solid #4a4455;
+      }
+      .label {
+        color: var(--cyan);
+        font-size: 8px;
+        text-transform: uppercase;
+      }
+      .ok {
+        color: var(--cyan);
+      }
+      .err {
+        color: var(--err);
+      }
+      #site-name {
+        max-width: 170px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-transform: none;
+      }
+      #limits {
+        margin: 0;
+        padding: 6px 8px;
+        border: 1px solid var(--err);
+        color: var(--err);
+        font-size: 8px;
+        line-height: 1.8;
+      }
+      #note {
+        margin: 0;
+        color: var(--err);
+        font-size: 8px;
+        line-height: 1.8;
+      }
+      #open {
+        width: 100%;
+        padding: 7px;
+        border-width: 1px;
+        background: var(--border);
+        color: #fff;
+      }
+      details {
+        color: var(--muted);
+        font-size: 8px;
+        text-transform: uppercase;
+      }
+      summary {
+        cursor: pointer;
+      }
+      form {
+        display: flex;
+        gap: 6px;
+        margin-top: 6px;
+      }
+      input {
+        flex: 1;
+        min-width: 0;
+        font: inherit;
+        padding: 6px;
+        background: #100d16;
+        color: var(--text);
+        border: 1px solid #4a4455;
+      }
+      form button {
+        padding: 6px 8px;
+        border-width: 1px;
+      }
+      input:focus,
+      button:focus-visible {
+        outline: 1px solid var(--cyan);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <img src="../icons/icon48.png" alt="" />
+      <strong>CHRONO.EXE</strong>
+      <span id="state">...</span>
+    </header>
+    <main>
+      <section class="timer" aria-live="polite">
+        <div id="clock">00:00:00</div>
+        <div id="category"><span id="swatch" hidden></span><span id="category-name">READY</span></div>
+      </section>
+
+      <div class="controls">
+        <button id="toggle" type="button" aria-label="Start" title="Start" disabled></button>
+        <button id="stop" type="button" aria-label="Stop" title="Stop" disabled></button>
+      </div>
+
+      <p id="note" role="alert" hidden></p>
+
+      <div class="row">
+        <span class="label">Today</span>
+        <span id="total" class="ok">00:00:00</span>
+      </div>
+      <div class="row">
+        <span class="label" id="site-name">This site</span>
+        <span id="site-time">--</span>
+      </div>
+      <p id="limits" role="status" hidden></p>
+      <div class="row">
+        <span class="label">Server</span>
+        <span id="status" class="err">SEARCHING...</span>
+      </div>
+
+      <button id="open" type="button">Open dashboard</button>
+
+      <details>
+        <summary>Advanced: server address</summary>
+        <form id="config">
+          <input id="api-url" type="url" placeholder="auto-detected" />
+          <button type="submit">Save</button>
+        </form>
+      </details>
+    </main>
+    <script src="./popup.js" type="module"></script>
+  </body>
+</html>

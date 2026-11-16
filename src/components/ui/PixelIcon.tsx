@@ -6,7 +6,10 @@
 const SPRITES = {
   play: ["X......", "XXX....", "XXXXX..", "XXXXXXX", "XXXXX..", "XXX....", "X......"],
   pause: [".XX.XX.", ".XX.XX.", ".XX.XX.", ".XX.XX.", ".XX.XX.", ".XX.XX.", ".XX.XX."],
-  stop: [".......", ".XXXXX.", ".XXXXX.", ".XXXXX.", ".XXXXX.", ".XXXXX.", "......."]
+  stop: [".......", ".XXXXX.", ".XXXXX.", ".XXXXX.", ".XXXXX.", ".XXXXX.", "......."],
+  minus: [".......", ".......", ".......", "XXXXXXX", ".......", ".......", "......."],
+  plus: ["...X...", "...X...", "...X...", "XXXXXXX", "...X...", "...X...", "...X..."],
+  check: [".......", "......X", ".....X.", "X...X..", ".X.X...", "..X....", "......."]
 } as const;
 
 export type PixelIconName = keyof typeof SPRITES;

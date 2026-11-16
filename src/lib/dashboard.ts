@@ -14,6 +14,7 @@ import { isCategoryColor } from "@/lib/palette";
 import { toStatus } from "@/lib/trackingStatus";
 import { hostOf } from "@/lib/glob";
 import { asProductivity } from "@/lib/categoryRef";
+import { OUTSIDE_CHROME } from "@/lib/scope";
 
 // Last time the extension reported in, including ignored heartbeats (e.g. while
 // the user is looking at the dashboard). Shared across route bundles.
@@ -83,6 +84,9 @@ export async function buildDashboardState(now = new Date()): Promise<DashboardSt
     totalTrackedSeconds: breakdown.totalTrackedSeconds + liveTracked,
     productiveSeconds: breakdown.productivity.productiveSeconds + (active && active.category.productivity === "PRODUCTIVE" ? liveTracked : 0),
     idleSeconds: breakdown.idleSeconds + liveIdle,
+    outsideSeconds:
+      (breakdown.categories.find((group) => group.category.name === OUTSIDE_CHROME)?.totalSeconds ?? 0) +
+      (active && active.category.name === OUTSIDE_CHROME ? liveTracked : 0),
     sessionCount: breakdown.sessionCount,
     dominantCategory: dominant,
     lastHeartbeatAt: lastHeartbeatAt ? lastHeartbeatAt.toISOString() : null,

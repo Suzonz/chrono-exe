@@ -5,9 +5,22 @@ import { Widget } from "@/components/ui/Widget";
 import { TimelineStrip } from "@/components/ui/TimelineStrip";
 import { CategoryBadge } from "@/components/ui/CategoryBadge";
 import { dayRange } from "@/lib/time";
+import { OUTSIDE_CHROME } from "@/lib/scope";
 
 /** 24h strip of the day: what you did, hour by hour. */
-export function DayTimeline({ date, blocks, nowMs }: { date: string; blocks: TimelineBlock[]; nowMs?: number }) {
+export function DayTimeline({
+  date,
+  blocks: allBlocks,
+  nowMs,
+  includeOutside = true
+}: {
+  date: string;
+  blocks: TimelineBlock[];
+  nowMs?: number;
+  /** false: Chrome only, time in other apps is left out. */
+  includeOutside?: boolean;
+}) {
+  const blocks = includeOutside ? allBlocks : allBlocks.filter((block) => block.category.name !== OUTSIDE_CHROME);
   const legend = new Map<string, TimelineBlock["category"]>();
   for (const block of blocks) if (!block.isIdle) legend.set(block.category.id, block.category);
 

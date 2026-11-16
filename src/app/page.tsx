@@ -10,7 +10,11 @@ import { CategoryBadge } from "@/components/ui/CategoryBadge";
 import { TrackingControls } from "@/components/ui/TrackingControls";
 import { PixelIcon } from "@/components/ui/PixelIcon";
 import { ErrorPanel, Loading } from "@/components/ui/States";
-import { BackgroundAudio, CategoryBars, LimitWarnings, ProductivityCard, SummaryLine, TopSites, TotalCard } from "@/components/report/ReportBlocks";
+import { BackgroundAudio, LimitWarnings, ProductivityCard, SummaryLine, TopSites } from "@/components/report/ReportBlocks";
+import { TimeRing } from "@/components/report/TimeRing";
+import { ProductiveCounter } from "@/components/report/ProductiveCounter";
+import { ScopeToggle } from "@/components/ui/ScopeToggle";
+import { useIncludeOutside } from "@/hooks/useIncludeOutside";
 import { DayTimeline } from "@/components/report/DayTimeline";
 import { summarizeDay } from "@/lib/summary";
 import { siteLabel } from "@/lib/glob";
@@ -44,9 +48,10 @@ export default function TodayPage() {
   const offline = connectionStatus === "reconnecting";
   const now = useNow(30000);
   const today = todayKey();
+  const { includeOutside, setIncludeOutside, scope } = useIncludeOutside();
 
   // Reports refresh whenever the server pushes a new live snapshot.
-  const report = useApi<DailyBreakdown>(`/api/stats?period=day&date=${today}`, live.revision);
+  const report = useApi<DailyBreakdown>(`/api/stats?period=day&date=${today}&scope=${scope}`, live.revision);
   const timeline = useApi<TimelineBlock[]>(`/api/timeline?date=${today}`, live.revision);
 
   if (!live.ready) return <Loading label="BOOTING CHRONO.EXE" />;
@@ -59,6 +64,10 @@ export default function TodayPage() {
   return (
     <div className="grid gap-widget-gutter">
       {live.lastHeartbeatAt === null ? <GetStarted /> : null}
+
+      <div className="flex justify-end">
+        <ScopeToggle checked={includeOutside} onChange={setIncludeOutside} />
+      </div>
 
       <div className="grid grid-cols-1 gap-widget-gutter xl:grid-cols-[3fr_2fr]">
         <Widget
@@ -107,15 +116,7 @@ export default function TodayPage() {
           </div>
         </Widget>
 
-        <TotalCard
-          title="TODAY"
-          hint="Time you were active today. Time away from the keyboard is not counted."
-          seconds={live.totalTrackedSeconds}
-          previousSeconds={day?.previous.totalTrackedSeconds ?? 0}
-          previousLabel="yesterday"
-          goal={{ goalSeconds: live.dailyGoalSeconds, productiveSeconds: live.productiveSeconds }}
-          idleSeconds={live.idleSeconds}
-        />
+        <ProductiveCounter productiveSeconds={live.productiveSeconds} goalSeconds={live.dailyGoalSeconds} running={running} />
       </div>
 
       {report.error ? <ErrorPanel error={report.error} onRetry={report.reload} /> : null}
@@ -125,17 +126,31 @@ export default function TodayPage() {
           <SummaryLine text={summarizeDay(day, true)} />
           <LimitWarnings alerts={day.limitAlerts} />
 
-          <div className="grid grid-cols-1 gap-widget-gutter xl:grid-cols-2">
-            <ProductivityCard productivity={day.productivity} previousScore={day.previous.productivityScore} previousLabel="yesterday" />
-            <CategoryBars groups={day.categories} hint="Where your active time went today. A red line marks a daily limit." showLimits />
+          <div className="grid grid-cols-1 items-start gap-widget-gutter xl:grid-cols-2">
+            <TimeRing
+              hint={
+                includeOutside
+                  ? "Your active time today on the whole computer, per category. Time away from the keyboard is not counted."
+                  : "Your active time today in Chrome only, per category. Time away from the keyboard is not counted."
+              }
+              groups={day.categories}
+              totalSeconds={includeOutside ? live.totalTrackedSeconds : Math.max(0, live.totalTrackedSeconds - live.outsideSeconds)}
+              centerLabel={includeOutside ? "ON YOUR PC" : "IN CHROME"}
+              previousSeconds={day.previous.totalTrackedSeconds}
+              previousLabel="yesterday"
+              idleSeconds={live.idleSeconds}
+              showLimits
+              live
+            />
+            <div className="grid content-start gap-widget-gutter">
+              <ProductivityCard productivity={day.productivity} previousScore={day.previous.productivityScore} previousLabel="yesterday" />
+              <BackgroundAudio entries={day.backgroundAudio} />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-widget-gutter xl:grid-cols-[2fr_3fr]">
-            <div className="grid content-start gap-widget-gutter">
-              <TopSites sites={day.sites} hint="The websites you spent the most time on today." />
-              <BackgroundAudio entries={day.backgroundAudio} />
-            </div>
-            <DayTimeline date={today} blocks={timeline.data ?? []} nowMs={now} />
+            <TopSites sites={day.sites} hint="The websites you spent the most time on today." />
+            <DayTimeline date={today} blocks={timeline.data ?? []} nowMs={now} includeOutside={includeOutside} />
           </div>
         </>
       ) : report.loading ? (

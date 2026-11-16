@@ -166,6 +166,8 @@ export interface DashboardState {
   totalTrackedSeconds: number;
   /** Active time on PRODUCTIVE categories today (the daily goal applies to it). */
   productiveSeconds: number;
+  /** Active time spent in other apps today (OUTSIDE_CHROME). */
+  outsideSeconds: number;
   idleSeconds: number;
   sessionCount: number;
   dominantCategory: CategoryRef | null;

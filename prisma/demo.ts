@@ -48,14 +48,17 @@ const SOURCES: Record<string, readonly { url: string; title: string }[]> = {
     { url: "https://www.notion.so/workspace/roadmap", title: "Roadmap – Notion" },
     { url: "https://www.figma.com/file/abc/design", title: "Design – Figma" }
   ],
+  // Time in other apps (VS Code, Figma desktop...): the extension sends this pseudo-address.
+  OUTSIDE_CHROME: [{ url: "chrono://outside.chrome", title: "" }],
   LEARNING: [
     { url: "https://www.udemy.com/course/advanced-typescript/", title: "Advanced TypeScript | Udemy" }
   ]
 };
 
 const WEIGHTS: [string, number][] = [
-  ["CODING", 45],
-  ["BROWSING", 18],
+  ["CODING", 34],
+  ["OUTSIDE_CHROME", 22],
+  ["BROWSING", 15],
   ["COMM", 14],
   ["MEDIA", 8],
   ["LEARNING", 8],
@@ -132,7 +135,7 @@ async function main(): Promise<void> {
   }
 
   const categories = new Map((await prisma.category.findMany()).map((c) => [c.name, c.id]));
-  const missing = ["CODING", "BROWSING", "COMM", "MEDIA", "OTHER", "IDLE"].filter((name) => !categories.has(name));
+  const missing = ["CODING", "BROWSING", "COMM", "MEDIA", "OTHER", "IDLE", "OUTSIDE_CHROME"].filter((name) => !categories.has(name));
   if (missing.length > 0) {
     console.error(`✗ missing categories ${missing.join(", ")}. Run "npm run db:seed" first.`);
     process.exit(1);

@@ -4,6 +4,7 @@ import type { ActiveSessionState, CategoryRef, TrackingState } from "@/types";
 import { stopwatchSeconds } from "@/lib/trackingStatus";
 import { useLive } from "@/components/providers/LiveProvider";
 import { useNow } from "@/hooks/useNow";
+import { OUTSIDE_CHROME } from "@/lib/scope";
 
 export interface DashboardView {
   ready: boolean;
@@ -14,6 +15,8 @@ export interface DashboardView {
   dailyGoalSeconds: number;
   totalTrackedSeconds: number;
   productiveSeconds: number;
+  /** Active time in other apps today (OUTSIDE_CHROME). */
+  outsideSeconds: number;
   idleSeconds: number;
   sessionCount: number;
   dominantCategory: CategoryRef | null;
@@ -39,6 +42,7 @@ export function useDashboard(): DashboardView {
       dailyGoalSeconds: 14400,
       totalTrackedSeconds: 0,
       productiveSeconds: 0,
+      outsideSeconds: 0,
       idleSeconds: 0,
       sessionCount: 0,
       dominantCategory: null,
@@ -64,6 +68,7 @@ export function useDashboard(): DashboardView {
     dailyGoalSeconds: state.dailyGoalSeconds,
     totalTrackedSeconds: state.totalTrackedSeconds + (active && !active.isIdle ? drift : 0),
     productiveSeconds: state.productiveSeconds + (active && !active.isIdle && active.productivity === "PRODUCTIVE" ? drift : 0),
+    outsideSeconds: state.outsideSeconds + (active && !active.isIdle && active.categoryName === OUTSIDE_CHROME ? drift : 0),
     idleSeconds: state.idleSeconds + (active && active.isIdle ? drift : 0),
     sessionCount: state.sessionCount,
     dominantCategory: state.dominantCategory,

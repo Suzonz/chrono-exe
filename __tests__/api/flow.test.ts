@@ -78,6 +78,13 @@ describe("tracking flow", () => {
     expect(day.backgroundAudio[0]).toMatchObject({ host: "open.spotify.com" });
   });
 
+  it("leaves out time in other apps with scope=chrome", async () => {
+    const response = await stats.GET(new Request(`${BASE}/api/stats?period=day&date=${today()}&scope=chrome`));
+    const day = (await response.json()) as { categories: { category: { name: string } }[]; sites: { host: string }[] };
+    expect(day.categories.map((group) => group.category.name)).not.toContain("OUTSIDE_CHROME");
+    expect(day.sites.map((site) => site.host)).not.toContain("outside.chrome");
+  });
+
   it("stops recording while paused", async () => {
     await tracking.POST(new Request(`${BASE}/api/tracking`, json("POST", { action: "pause" })));
     const result = await beat({ url: "https://youtube.com/watch", timestamp: at(50) });

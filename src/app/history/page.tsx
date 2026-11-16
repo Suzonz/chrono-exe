@@ -9,7 +9,11 @@ import { Widget } from "@/components/ui/Widget";
 import { DateNavigator } from "@/components/ui/DateNavigator";
 import { CategoryBadge } from "@/components/ui/CategoryBadge";
 import { Empty, ErrorPanel, Loading } from "@/components/ui/States";
-import { BackgroundAudio, CategoryBars, LimitWarnings, ProductivityCard, SummaryLine, TopSites, TotalCard } from "@/components/report/ReportBlocks";
+import { BackgroundAudio, LimitWarnings, ProductivityCard, SummaryLine, TopSites } from "@/components/report/ReportBlocks";
+import { TimeRing } from "@/components/report/TimeRing";
+import { ScopeToggle } from "@/components/ui/ScopeToggle";
+import { useIncludeOutside } from "@/hooks/useIncludeOutside";
+import type { Scope } from "@/lib/scope";
 import { siteLabel } from "@/lib/glob";
 import { DayTimeline } from "@/components/report/DayTimeline";
 import { colorHex } from "@/lib/palette";
@@ -96,8 +100,11 @@ function ActivityLog({ date, refreshKey }: { date: string; refreshKey: number })
   );
 }
 
-function DayView({ date, refreshKey }: { date: string; refreshKey: number }) {
-  const { data, error, loading, reload } = useApi<DailyBreakdown>(`/api/stats?period=day&date=${date}`, refreshKey);
+const scopeHint = (period: string, scope: Scope) =>
+  `Your active time ${period}${scope === "all" ? " on the whole computer" : " in Chrome only"}, per category. Hover a slice for details.`;
+
+function DayView({ date, refreshKey, scope }: { date: string; refreshKey: number; scope: Scope }) {
+  const { data, error, loading, reload } = useApi<DailyBreakdown>(`/api/stats?period=day&date=${date}&scope=${scope}`, refreshKey);
   const timeline = useApi<TimelineBlock[]>(`/api/timeline?date=${date}`, refreshKey);
   if (error) return <ErrorPanel error={error} onRetry={reload} />;
   if (loading || !data) return <Loading />;
@@ -107,32 +114,31 @@ function DayView({ date, refreshKey }: { date: string; refreshKey: number }) {
     <div className="grid gap-widget-gutter">
       <SummaryLine text={summarizeDay(data, isToday)} />
       <LimitWarnings alerts={data.limitAlerts} />
-      <div className="grid grid-cols-1 gap-widget-gutter xl:grid-cols-2">
-        <TotalCard
-          title="ACTIVE TIME"
-          hint="Time you were active this day."
-          seconds={data.totalTrackedSeconds}
+      <div className="grid grid-cols-1 items-start gap-widget-gutter xl:grid-cols-2">
+        <TimeRing
+          hint={scopeHint("this day", scope)}
+          groups={data.categories}
+          totalSeconds={data.totalTrackedSeconds}
+          centerLabel={scope === "all" ? "ON YOUR PC" : "IN CHROME"}
           previousSeconds={data.previous.totalTrackedSeconds}
           previousLabel="the day before"
           idleSeconds={data.idleSeconds}
+          showLimits
         />
-        <ProductivityCard productivity={data.productivity} previousScore={data.previous.productivityScore} previousLabel="the day before" />
-      </div>
-      <div className="grid grid-cols-1 gap-widget-gutter xl:grid-cols-2">
-        <CategoryBars groups={data.categories} hint="Where your active time went this day." showLimits />
         <div className="grid content-start gap-widget-gutter">
+          <ProductivityCard productivity={data.productivity} previousScore={data.previous.productivityScore} previousLabel="the day before" />
           <TopSites sites={data.sites} hint="The websites you spent the most time on this day." />
           <BackgroundAudio entries={data.backgroundAudio} />
         </div>
       </div>
-      <DayTimeline date={date} blocks={timeline.data ?? []} nowMs={isToday ? Date.now() : undefined} />
+      <DayTimeline date={date} blocks={timeline.data ?? []} nowMs={isToday ? Date.now() : undefined} includeOutside={scope === "all"} />
       <ActivityLog date={date} refreshKey={refreshKey} />
     </div>
   );
 }
 
-function WeekView({ date, refreshKey, onSelectDay }: { date: string; refreshKey: number; onSelectDay: (key: string) => void }) {
-  const { data, error, loading, reload } = useApi<WeeklyBreakdown>(`/api/stats?period=week&date=${startOfWeekKey(date)}`, refreshKey);
+function WeekView({ date, refreshKey, scope, onSelectDay }: { date: string; refreshKey: number; scope: Scope; onSelectDay: (key: string) => void }) {
+  const { data, error, loading, reload } = useApi<WeeklyBreakdown>(`/api/stats?period=week&date=${startOfWeekKey(date)}&scope=${scope}`, refreshKey);
   if (error) return <ErrorPanel error={error} onRetry={reload} />;
   if (loading || !data) return <Loading />;
 
@@ -142,15 +148,19 @@ function WeekView({ date, refreshKey, onSelectDay }: { date: string; refreshKey:
   return (
     <div className="grid gap-widget-gutter">
       <SummaryLine text={summarizeWeek(data)} />
-      <div className="grid grid-cols-1 gap-widget-gutter xl:grid-cols-2">
-        <TotalCard
-          title="ACTIVE TIME"
-          hint="Total active time over the week."
-          seconds={data.totalTrackedSeconds}
+      <div className="grid grid-cols-1 items-start gap-widget-gutter xl:grid-cols-2">
+        <TimeRing
+          hint={scopeHint("this week", scope)}
+          groups={data.weeklyTotals}
+          totalSeconds={data.totalTrackedSeconds}
+          centerLabel="THIS WEEK"
           previousSeconds={data.previous.totalTrackedSeconds}
           previousLabel="last week"
         />
-        <ProductivityCard productivity={data.productivity} previousScore={data.previous.productivityScore} previousLabel="last week" />
+        <div className="grid content-start gap-widget-gutter">
+          <ProductivityCard productivity={data.productivity} previousScore={data.previous.productivityScore} previousLabel="last week" />
+          <TopSites sites={data.sites} hint="The websites you spent the most time on this week." />
+        </div>
       </div>
 
       <Widget title="DAY BY DAY" hint="Active time per day, colored by category. The % under each day is its productivity score. Click a day to open it.">
@@ -184,16 +194,12 @@ function WeekView({ date, refreshKey, onSelectDay }: { date: string; refreshKey:
         </div>
       </Widget>
 
-      <div className="grid grid-cols-1 gap-widget-gutter xl:grid-cols-2">
-        <CategoryBars groups={data.weeklyTotals} hint="Where your active time went this week." />
-        <TopSites sites={data.sites} hint="The websites you spent the most time on this week." />
-      </div>
     </div>
   );
 }
 
-function MonthView({ date, refreshKey, onSelectDay }: { date: string; refreshKey: number; onSelectDay: (key: string) => void }) {
-  const { data, error, loading, reload } = useApi<MonthlyHeatmap>(`/api/stats?period=month&date=${startOfMonthKey(date)}`, refreshKey);
+function MonthView({ date, refreshKey, scope, onSelectDay }: { date: string; refreshKey: number; scope: Scope; onSelectDay: (key: string) => void }) {
+  const { data, error, loading, reload } = useApi<MonthlyHeatmap>(`/api/stats?period=month&date=${startOfMonthKey(date)}&scope=${scope}`, refreshKey);
   if (error) return <ErrorPanel error={error} onRetry={reload} />;
   if (loading || !data) return <Loading />;
 
@@ -203,15 +209,19 @@ function MonthView({ date, refreshKey, onSelectDay }: { date: string; refreshKey
   return (
     <div className="grid gap-widget-gutter">
       <SummaryLine text={summarizeMonth(data)} />
-      <div className="grid grid-cols-1 gap-widget-gutter xl:grid-cols-2">
-        <TotalCard
-          title="ACTIVE TIME"
-          hint="Total active time over the month."
-          seconds={data.monthlyTotal}
+      <div className="grid grid-cols-1 items-start gap-widget-gutter xl:grid-cols-2">
+        <TimeRing
+          hint={scopeHint("this month", scope)}
+          groups={data.categories}
+          totalSeconds={data.monthlyTotal}
+          centerLabel="THIS MONTH"
           previousSeconds={data.previous.totalTrackedSeconds}
           previousLabel="last month"
         />
-        <ProductivityCard productivity={data.productivity} previousScore={data.previous.productivityScore} previousLabel="last month" />
+        <div className="grid content-start gap-widget-gutter">
+          <ProductivityCard productivity={data.productivity} previousScore={data.previous.productivityScore} previousLabel="last month" />
+          <TopSites sites={data.sites} hint="The websites you spent the most time on this month." />
+        </div>
       </div>
 
       <Widget title="CALENDAR" hint="The brighter the square, the more active the day. Click a day to open it.">
@@ -251,10 +261,6 @@ function MonthView({ date, refreshKey, onSelectDay }: { date: string; refreshKey
         </div>
       </Widget>
 
-      <div className="grid grid-cols-1 gap-widget-gutter xl:grid-cols-2">
-        <CategoryBars groups={data.categories} hint="Where your active time went this month." />
-        <TopSites sites={data.sites} hint="The websites you spent the most time on this month." />
-      </div>
     </div>
   );
 }
@@ -263,6 +269,7 @@ export default function HistoryPage() {
   const [date, setDate] = useDateParam();
   const [period, setPeriodState] = useState<Period>("day");
   const { revision } = useLive();
+  const { includeOutside, setIncludeOutside, scope } = useIncludeOutside();
   const today = todayKey();
 
   useEffect(() => {
@@ -314,12 +321,13 @@ export default function HistoryPage() {
             </button>
           ))}
         </div>
+        <ScopeToggle checked={includeOutside} onChange={setIncludeOutside} />
         <DateNavigator label={label} onPrev={() => step(-1)} onNext={() => step(1)} onToday={() => setDate(today)} disableNext={isCurrent} isCurrent={isCurrent} />
       </div>
 
-      {period === "day" ? <DayView date={date} refreshKey={refreshKey} /> : null}
-      {period === "week" ? <WeekView date={date} refreshKey={refreshKey} onSelectDay={selectDay} /> : null}
-      {period === "month" ? <MonthView date={date} refreshKey={refreshKey} onSelectDay={selectDay} /> : null}
+      {period === "day" ? <DayView date={date} refreshKey={refreshKey} scope={scope} /> : null}
+      {period === "week" ? <WeekView date={date} refreshKey={refreshKey} scope={scope} onSelectDay={selectDay} /> : null}
+      {period === "month" ? <MonthView date={date} refreshKey={refreshKey} scope={scope} onSelectDay={selectDay} /> : null}
       {period === "day" && date > today ? <Empty>This day has not happened yet.</Empty> : null}
     </div>
   );

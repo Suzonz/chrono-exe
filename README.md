@@ -27,11 +27,15 @@ Everything runs on your own computer, and the database is a single local file. N
 **Three screens**
 - **TODAY**:
   - play / pause / stop with a stopwatch, and the category and site you are on;
-  - active time with a productive-time goal you can edit in place;
+  - a live **productive-time counter**, with the daily goal set right there (- / + buttons, 15 min steps);
   - a one-line summary of the day;
-  - productivity score, time per category and top sites;
-  - background audio and an hour-by-hour timeline.
-- **HISTORY**: the same report for any DAY, WEEK or MONTH, each compared with the previous period.
+  - a **pixel-art ring** of where the time went, with the share of each category (hover a slice for details);
+  - productivity score, top sites, background audio and an hour-by-hour timeline.
+- **INCLUDE OUTSIDE CHROME** checkbox, on TODAY and HISTORY, and remembered:
+  - checked, the figures cover the whole computer;
+  - unchecked, they cover only what happens in Chrome;
+  - every block follows it, so totals, percentages, scores and trends always describe the same thing.
+- **HISTORY**: the same report (ring, productivity, top sites) for any DAY, WEEK or MONTH, each compared with the previous period.
   - DAY adds an activity log and CSV export.
   - WEEK shows stacked bars per day.
   - MONTH is a calendar heatmap.
@@ -181,7 +185,7 @@ Run `npm run launcher:install` again after changing the code (it rebuilds), and 
 | `POST` | `/api/heartbeat` | Ingest a heartbeat `{ url, timestamp, idleSeconds, backgroundAudio[] }` |
 | `GET POST` | `/api/tracking` | Play / pause / stop; `GET ?url=` also returns today's total and the current site's time |
 | `GET` | `/api/sse` | Live stream (`DASHBOARD_UPDATE`, `DB_UNREACHABLE`) |
-| `GET` | `/api/stats?period=day\|week\|month&date=YYYY-MM-DD` | Report: categories, top sites, productivity, limits, background audio, previous period |
+| `GET` | `/api/stats?period=day\|week\|month&date=YYYY-MM-DD&scope=all\|chrome` | Report (`scope=chrome` leaves out other apps): categories, top sites, productivity, limits, background audio, previous period |
 | `GET` | `/api/sessions?date=YYYY-MM-DD` | Chronological activities of a day |
 | `GET` | `/api/timeline?date=YYYY-MM-DD` | Timeline blocks of a day |
 | `GET POST PUT PATCH DELETE` | `/api/categories` | CRUD (productivity type, daily limit); `PATCH` reorders |

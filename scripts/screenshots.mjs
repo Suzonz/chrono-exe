@@ -23,7 +23,7 @@ if (!executablePath) throw new Error("Chrome not found: set CHROME_PATH");
 
 const shots = [
   // Tall viewports instead of fullPage: the sidebar and status bar are fixed.
-  { name: "today", path: "/", height: 1320 },
+  { name: "today", path: "/", height: 860 },
   { name: "history-week", path: `/history?view=week&date=${process.env.WEEK_DATE ?? ""}`, height: 1180 },
   { name: "history-month", path: "/history?view=month", height: 1000 },
   { name: "settings-categories", path: "/settings", height: 900 }

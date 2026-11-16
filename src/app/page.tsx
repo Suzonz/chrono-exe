@@ -10,13 +10,12 @@ import { CategoryBadge } from "@/components/ui/CategoryBadge";
 import { TrackingControls } from "@/components/ui/TrackingControls";
 import { PixelIcon } from "@/components/ui/PixelIcon";
 import { ErrorPanel, Loading } from "@/components/ui/States";
-import { BackgroundAudio, LimitWarnings, ProductivityCard, SummaryLine, TopSites } from "@/components/report/ReportBlocks";
+import { BackgroundAudio, TopSites } from "@/components/report/ReportBlocks";
 import { TimeRing } from "@/components/report/TimeRing";
 import { ProductiveCounter } from "@/components/report/ProductiveCounter";
 import { ScopeToggle } from "@/components/ui/ScopeToggle";
 import { useIncludeOutside } from "@/hooks/useIncludeOutside";
 import { DayTimeline } from "@/components/report/DayTimeline";
-import { summarizeDay } from "@/lib/summary";
 import { siteLabel } from "@/lib/glob";
 import { formatClock, formatDuration, todayKey } from "@/lib/time";
 
@@ -61,101 +60,107 @@ export default function TodayPage() {
   const paused = live.trackingState === "PAUSED";
   const day = report.data;
 
+  const status = offline
+    ? serverStopped
+      ? "Server off. Press play in the Chrome extension."
+      : "The server is not answering."
+    : running
+      ? live.extensionOnline
+        ? active
+          ? active.isIdle
+            ? "You seem away from the keyboard."
+            : active.host
+              ? `on ${siteLabel(active.host)} since ${formatClock(active.startedAt)}`
+              : `since ${formatClock(active.startedAt)}`
+          : "Waiting for the extension..."
+        : "Extension not connected."
+      : paused
+        ? "Nothing is recorded while paused."
+        : "Press play to start recording.";
+
+  const timer = (
+    <Widget
+      title="NOW TRACKING"
+      hint="Play starts recording, pause holds it, stop ends it. The category follows the tab you are looking at."
+      meta={
+        <span className={`inline-flex items-center gap-xs ${running ? "text-secondary-fixed" : paused ? "text-tertiary" : ""}`}>
+          <PixelIcon name={running ? "play" : paused ? "pause" : "stop"} size={8} className={running ? "animate-blink" : ""} />
+          {offline ? "OFF" : running ? "REC" : paused ? "PAUSED" : "STOPPED"}
+        </span>
+      }
+      pulseBorder={running && !live.extensionOnline}
+      compact
+    >
+      <div className="flex flex-col items-center gap-sm text-center" aria-live="polite">
+        <div className={`text-[26px] leading-none ${running ? "text-secondary-fixed" : paused ? "text-tertiary" : "text-outline-variant"}`}>
+          {formatDuration(live.stopwatchSeconds)}
+        </div>
+        <div className="flex min-h-[18px] max-w-full items-center justify-center">
+          {running && active && !active.isIdle ? (
+            <CategoryBadge category={{ name: active.categoryName, color: active.categoryColor }} size="ui-small" />
+          ) : (
+            <span className="text-ui-small text-outline">{offline ? "SERVER OFF" : paused ? "PAUSED" : running ? "WAITING..." : "READY"}</span>
+          )}
+        </div>
+        <TrackingControls state={live.trackingState} disabled={offline} size="sm" />
+        <p className="max-w-full truncate font-read text-read-sm text-outline" title={status}>
+          {status}
+        </p>
+      </div>
+    </Widget>
+  );
+
+  const ring = day ? (
+    <TimeRing
+      hint={
+        includeOutside
+          ? "Your active time today on the whole computer, per category. Hover a slice for details. Time away from the keyboard is not counted."
+          : "Your active time today in Chrome only, per category. Hover a slice for details. Time away from the keyboard is not counted."
+      }
+      groups={day.categories}
+      totalSeconds={includeOutside ? live.totalTrackedSeconds : Math.max(0, live.totalTrackedSeconds - live.outsideSeconds)}
+      centerLabel={includeOutside ? "ON YOUR PC" : "IN CHROME"}
+      previousSeconds={day.previous.totalTrackedSeconds}
+      previousLabel="yesterday"
+      idleSeconds={live.idleSeconds}
+      showLimits
+      live
+      fill
+      toolbar={<ScopeToggle checked={includeOutside} onChange={setIncludeOutside} />}
+    />
+  ) : report.loading ? (
+    <Loading />
+  ) : null;
+
   return (
     <div className="grid gap-widget-gutter">
       {live.lastHeartbeatAt === null ? <GetStarted /> : null}
-
-      <div className="flex justify-end">
-        <ScopeToggle checked={includeOutside} onChange={setIncludeOutside} />
-      </div>
-
-      <div className="grid grid-cols-1 gap-widget-gutter xl:grid-cols-[3fr_2fr]">
-        <Widget
-          title="NOW TRACKING"
-          hint="Play starts recording, pause holds it, stop ends it. The category follows the tab you are looking at."
-          meta={
-            <span className={`inline-flex items-center gap-xs ${running ? "text-secondary-fixed" : paused ? "text-tertiary" : ""}`}>
-              <PixelIcon name={running ? "play" : paused ? "pause" : "stop"} size={8} className={running ? "animate-blink" : ""} />
-              {offline ? "SERVER OFF" : running ? "RECORDING" : paused ? "PAUSED" : "STOPPED"}
-            </span>
-          }
-          pulseBorder={running && !live.extensionOnline}
-        >
-          <div className="flex flex-col items-center gap-md text-center" aria-live="polite">
-            <div className="flex min-h-[24px] flex-col items-center gap-xs">
-              {running && active ? (
-                <>
-                  <CategoryBadge category={{ name: active.categoryName, color: active.categoryColor }} size="h2" className={active.isIdle ? "animate-blink" : ""} />
-                  <span className="font-read text-read text-on-surface-variant">
-                    {active.isIdle ? "You seem away from the keyboard" : active.host ? `on ${siteLabel(active.host)}` : ""}
-                  </span>
-                </>
-              ) : (
-                <span className="text-h2 text-outline">{paused ? "PAUSED" : running ? "WAITING..." : "READY"}</span>
-              )}
-            </div>
-            <div className={`text-[32px] leading-none sm:text-[44px] ${running ? "text-secondary-fixed" : paused ? "text-tertiary" : "text-outline-variant"}`}>
-              {formatDuration(live.stopwatchSeconds)}
-            </div>
-            <TrackingControls state={live.trackingState} disabled={offline} />
-            <p className="font-read text-read-sm text-outline">
-              {offline
-                ? serverStopped
-                  ? "The server is off. Press play in the Chrome extension to start it again."
-                  : "The server is not answering, so the buttons are disabled."
-                : running
-                ? live.extensionOnline
-                  ? active
-                    ? `Current activity since ${formatClock(active.startedAt)}.`
-                    : "Recording. Waiting for the first signal from the extension."
-                  : "The Chrome extension is not connected, so the category cannot follow your tabs."
-                : paused
-                  ? "Nothing is recorded while paused."
-                  : "Press play to start recording your day."}
-            </p>
-          </div>
-        </Widget>
-
-        <ProductiveCounter productiveSeconds={live.productiveSeconds} goalSeconds={live.dailyGoalSeconds} running={running} />
-      </div>
-
       {report.error ? <ErrorPanel error={report.error} onRetry={report.reload} /> : null}
 
-      {day ? (
-        <>
-          <SummaryLine text={summarizeDay(day, true)} />
-          <LimitWarnings alerts={day.limitAlerts} />
+      {/* One screen, no scrolling (from 1280px wide): left column timer + top sites, right the ring on top. */}
+      <div className="grid grid-cols-1 gap-widget-gutter xl:h-[calc(100vh-124px)] xl:min-h-[600px] xl:grid-cols-[minmax(260px,1fr)_3fr]">
+        <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-widget-gutter">
+          {timer}
+          {day ? <TopSites sites={day.sites} hint="The websites you spent the most time on today." compact /> : <div />}
+        </div>
 
-          <div className="grid grid-cols-1 items-start gap-widget-gutter xl:grid-cols-2">
-            <TimeRing
-              hint={
-                includeOutside
-                  ? "Your active time today on the whole computer, per category. Time away from the keyboard is not counted."
-                  : "Your active time today in Chrome only, per category. Time away from the keyboard is not counted."
-              }
-              groups={day.categories}
-              totalSeconds={includeOutside ? live.totalTrackedSeconds : Math.max(0, live.totalTrackedSeconds - live.outsideSeconds)}
-              centerLabel={includeOutside ? "ON YOUR PC" : "IN CHROME"}
-              previousSeconds={day.previous.totalTrackedSeconds}
-              previousLabel="yesterday"
-              idleSeconds={live.idleSeconds}
-              showLimits
-              live
-            />
-            <div className="grid content-start gap-widget-gutter">
-              <ProductivityCard productivity={day.productivity} previousScore={day.previous.productivityScore} previousLabel="yesterday" />
-              <BackgroundAudio entries={day.backgroundAudio} />
+        <div className="grid min-h-0 grid-rows-[minmax(0,1.25fr)_minmax(0,1fr)] gap-widget-gutter">
+          {ring}
+          <div className="grid min-h-0 grid-cols-1 gap-widget-gutter lg:grid-cols-[minmax(340px,1.15fr)_2fr]">
+            <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-widget-gutter">
+              <ProductiveCounter
+                productiveSeconds={live.productiveSeconds}
+                goalSeconds={live.dailyGoalSeconds}
+                running={running}
+                score={day?.productivity.score ?? null}
+                previousScore={day?.previous.productivityScore ?? null}
+              />
+              <BackgroundAudio entries={day?.backgroundAudio ?? []} compact />
             </div>
+            <DayTimeline date={today} blocks={timeline.data ?? []} nowMs={now} includeOutside={includeOutside} compact />
           </div>
-
-          <div className="grid grid-cols-1 gap-widget-gutter xl:grid-cols-[2fr_3fr]">
-            <TopSites sites={day.sites} hint="The websites you spent the most time on today." />
-            <DayTimeline date={today} blocks={timeline.data ?? []} nowMs={now} includeOutside={includeOutside} />
-          </div>
-        </>
-      ) : report.loading ? (
-        <Loading />
-      ) : null}
+        </div>
+      </div>
     </div>
   );
 }

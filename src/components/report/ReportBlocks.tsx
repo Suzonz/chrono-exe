@@ -60,14 +60,14 @@ export function ProductivityCard({
 }
 
 /** Websites where the time went. */
-export function TopSites({ sites, hint }: { sites: SiteStat[]; hint: string }) {
+export function TopSites({ sites, hint, compact = false }: { sites: SiteStat[]; hint: string; compact?: boolean }) {
   const max = Math.max(1, ...sites.map((site) => site.seconds));
   return (
-    <Widget title="TOP SITES" hint={hint}>
+    <Widget title="TOP SITES" hint={hint} compact={compact} className={compact ? "h-full" : ""}>
       {sites.length === 0 ? (
         <Empty>No websites recorded.</Empty>
       ) : (
-        <ol className="space-y-sm">
+        <ol className={compact ? "min-h-0 space-y-sm overflow-hidden" : "space-y-sm"}>
           {sites.map((site, index) => (
             <li key={site.host} className="grid grid-cols-[22px_minmax(0,1fr)_auto] items-center gap-x-sm">
               <span className="text-ui-small text-outline">{String(index + 1).padStart(2, "0")}</span>
@@ -116,11 +116,17 @@ export function SummaryLine({ text }: { text: string }) {
 }
 
 /** Sites that played sound in background tabs: shown for information, never counted. */
-export function BackgroundAudio({ entries }: { entries: { host: string; seconds: number }[] }) {
-  if (entries.length === 0) return null;
+export function BackgroundAudio({ entries, compact = false }: { entries: { host: string; seconds: number }[]; compact?: boolean }) {
+  if (entries.length === 0 && !compact) return null;
   return (
-    <Widget title="BACKGROUND AUDIO" hint="Tabs playing sound while you were doing something else. Listening in the background is not counted as active time.">
-      <ul className="space-y-xs font-read text-read">
+    <Widget
+      title="BACKGROUND AUDIO"
+      hint="Tabs playing sound while you were doing something else. Listening in the background is not counted as active time."
+      compact={compact}
+      className={compact ? "h-full" : ""}
+    >
+      {entries.length === 0 ? <p className="font-read text-read-sm text-outline">Nothing played in the background today.</p> : null}
+      <ul className={`space-y-xs font-read text-read ${compact ? "min-h-0 overflow-hidden" : ""}`}>
         {entries.map((entry) => (
           <li key={entry.host} className="flex justify-between gap-sm">
             <span className="truncate text-on-surface-variant">{siteLabel(entry.host)}</span>

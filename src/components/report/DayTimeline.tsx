@@ -12,8 +12,11 @@ export function DayTimeline({
   date,
   blocks: allBlocks,
   nowMs,
-  includeOutside = true
+  includeOutside = true,
+  compact = false
 }: {
+  /** Fills its grid cell (TODAY). */
+  compact?: boolean;
   date: string;
   blocks: TimelineBlock[];
   nowMs?: number;
@@ -25,8 +28,13 @@ export function DayTimeline({
   for (const block of blocks) if (!block.isIdle) legend.set(block.category.id, block.category);
 
   return (
-    <Widget title="YOUR DAY, HOUR BY HOUR" hint="Each colored block is an activity. Hover one to see what it was. Gaps mean nothing was recorded.">
-      <TimelineStrip blocks={blocks} windowStart={dayRange(date).start.getTime()} windowSeconds={86400} nowMs={nowMs} ticks={6} heightClass="h-12" />
+    <Widget
+      title="YOUR DAY, HOUR BY HOUR"
+      hint="Each colored block is an activity. Hover one to see what it was. Gaps mean nothing was recorded."
+      compact={compact}
+      className={compact ? "h-full" : ""}
+    >
+      <TimelineStrip blocks={blocks} windowStart={dayRange(date).start.getTime()} windowSeconds={86400} nowMs={nowMs} ticks={6} heightClass={compact ? "h-20" : "h-12"} />
       <div className="mt-sm flex flex-wrap gap-x-lg gap-y-xs">
         {Array.from(legend.values()).map((category) => (
           <CategoryBadge key={category.id} category={category} size="ui-small" />

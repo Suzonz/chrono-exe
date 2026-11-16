@@ -151,7 +151,9 @@ Then reload the extension in `chrome://extensions`. From now on:
 | ❚❚ pause | Recording pauses, the server keeps running so the dashboard stays available |
 | ■ stop | Recording stops and the server shuts down. An open dashboard shows `SERVER OFF` and reconnects by itself on the next play |
 
-How it works: the extension calls [`chrome.runtime.sendNativeMessage`](https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging). Chrome runs `launcher/host.mjs`, which starts `next start` detached (production build in `.next-app/`, so it never clashes with `next dev`) with `CHRONO_LAUNCHER=1`. Only a server started this way stops itself on stop; `npm run dev` is never shut down. Only this extension may call the launcher: the manifest has a fixed `key`, so its ID is stable, and the launcher allows that ID only. Server output goes to `launcher/server.log`.
+How it works: the extension calls [`chrome.runtime.sendNativeMessage`](https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging). Chrome runs `launcher/host.mjs`, which starts `next start` detached (production build in `.next-app/`, so it never clashes with `next dev`) with `CHRONO_LAUNCHER=1`. Only a server started this way stops itself on stop; `npm run dev` is never shut down. Only this extension may call the launcher: the manifest has a fixed `key`, so its ID is stable, and the launcher allows that ID only. Server output goes to `launcher/server.log`, and each launcher call is logged in `launcher/host.log`.
+
+If the popup says `Specified native messaging host not found`, the launcher is not registered: run `npm run launcher:install` again from a regular terminal (not from a sandboxed tool, which cannot write to the Windows registry).
 
 Run `npm run launcher:install` again after changing the code (it rebuilds), and `npm run launcher:uninstall` to remove it.
 

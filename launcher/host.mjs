@@ -12,7 +12,7 @@
  * Installed by `npm run launcher:install` (see scripts/launcher.mjs).
  */
 import { spawn } from "node:child_process";
-import { closeSync, existsSync, openSync, statSync, truncateSync } from "node:fs";
+import { appendFileSync, closeSync, existsSync, openSync, statSync, truncateSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -73,6 +73,12 @@ export async function handle(message) {
 }
 
 function main() {
+  // One line per call, to diagnose "launcher unavailable" (is Chrome calling us at all?).
+  try {
+    appendFileSync(path.join(here, "host.log"), `${new Date().toISOString()} ${process.argv.slice(2).join(" ")}\n`);
+  } catch {
+    // logging must never break the protocol
+  }
   let buffer = Buffer.alloc(0);
   let done = false;
   const reply = (value) => process.stdout.write(encodeMessage(value), () => process.exit(0));

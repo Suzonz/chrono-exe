@@ -167,7 +167,8 @@ function render(): void {
   toggle.setAttribute("aria-label", toggleLabel);
   toggle.title = toggleLabel;
   toggle.className = state === "RUNNING" ? "pause" : "";
-  toggle.disabled = busy || (!snapshot && !(serverOff && canBoot));
+  // Server off: play always tries to start it (the error says why if it cannot).
+  toggle.disabled = busy || (!snapshot && !serverOff);
   ($("stop") as HTMLButtonElement).disabled = busy || !snapshot || state === "STOPPED";
   ($("open") as HTMLButtonElement).disabled = !snapshot;
 

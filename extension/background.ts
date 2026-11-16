@@ -343,27 +343,33 @@ function askLauncher(message: object): Promise<LauncherReply | null> {
   return new Promise((resolve) => {
     try {
       chrome.runtime.sendNativeMessage(LAUNCHER, message, (reply?: LauncherReply) => {
-        resolve(chrome.runtime.lastError || !reply ? null : reply);
+        const error = chrome.runtime.lastError?.message ?? (reply ? null : "NO REPLY");
+        void chrome.storage.local.set({ launcherError: error });
+        resolve(error ? null : reply ?? null);
       });
-    } catch {
+    } catch (error) {
+      void chrome.storage.local.set({ launcherError: error instanceof Error ? error.message : String(error) });
       resolve(null);
     }
   });
 }
 
-/** Cached for the browser session: pinging spawns a process. */
+/** A success is cached for the browser session (pinging spawns a process); a failure is retried. */
 async function hasLauncher(): Promise<boolean> {
   const { launcher } = await chrome.storage.session.get("launcher");
-  if (typeof launcher === "boolean") return launcher;
+  if (launcher === true) return true;
   const available = (await askLauncher({ action: "ping" }))?.ok === true;
-  await chrome.storage.session.set({ launcher: available });
+  if (available) await chrome.storage.session.set({ launcher: true });
   return available;
 }
 
 async function bootServer(): Promise<{ url: string } | { error: string }> {
   const reply = await askLauncher({ action: "start" });
-  await chrome.storage.session.set({ launcher: reply !== null });
-  if (!reply) return { error: "SERVER OFF. RUN npm run launcher:install ONCE (OR npm run dev)." };
+  if (!reply) {
+    const { launcherError } = await chrome.storage.local.get("launcherError");
+    return { error: `LAUNCHER UNAVAILABLE: ${String(launcherError ?? "UNKNOWN")}` };
+  }
+  await chrome.storage.session.set({ launcher: true });
   if (!reply.ok || !reply.url) {
     return { error: reply.error === "NOT_BUILT" ? "APP NOT BUILT. RUN npm run launcher:install." : `LAUNCHER ERROR: ${reply.error ?? "UNKNOWN"}` };
   }
@@ -401,7 +407,13 @@ async function callTracking(action?: "start" | "pause" | "stop"): Promise<Reply>
     const launcher = await hasLauncher();
     await chrome.storage.local.set({ connectionStatus: "disconnected", lastError: "SERVER OFF" });
     await updateBadge("STOPPED", 0);
-    return { ok: false, off: true, launcher, error: launcher ? null : "SERVER OFF. RUN npm run launcher:install ONCE (OR npm run dev)." };
+    const { launcherError } = await chrome.storage.local.get("launcherError");
+    return {
+      ok: false,
+      off: true,
+      launcher,
+      error: launcher ? null : `SERVER OFF. LAUNCHER: ${String(launcherError ?? "NOT INSTALLED")}. RUN npm run launcher:install ONCE (OR npm run dev).`
+    };
   }
   try {
     const tab = await getActiveTab();

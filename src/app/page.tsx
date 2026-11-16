@@ -91,8 +91,8 @@ export default function TodayPage() {
       pulseBorder={running && !live.extensionOnline}
       compact
     >
-      <div className="flex flex-col items-center gap-sm text-center" aria-live="polite">
-        <div className={`text-[26px] leading-none ${running ? "text-secondary-fixed" : paused ? "text-tertiary" : "text-outline-variant"}`}>
+      <div className="flex flex-col items-center gap-md text-center" aria-live="polite">
+        <div className={`text-[36px] leading-none ${running ? "text-secondary-fixed" : paused ? "text-tertiary" : "text-outline-variant"}`}>
           {formatDuration(live.stopwatchSeconds)}
         </div>
         <div className="flex min-h-[18px] max-w-full items-center justify-center">
@@ -102,7 +102,7 @@ export default function TodayPage() {
             <span className="text-ui-small text-outline">{offline ? "SERVER OFF" : paused ? "PAUSED" : running ? "WAITING..." : "READY"}</span>
           )}
         </div>
-        <TrackingControls state={live.trackingState} disabled={offline} size="sm" />
+        <TrackingControls state={live.trackingState} disabled={offline} />
         <p className="max-w-full truncate font-read text-read-sm text-outline" title={status}>
           {status}
         </p>
@@ -147,7 +147,7 @@ export default function TodayPage() {
         <div className="grid min-h-0 grid-rows-[minmax(0,1.25fr)_minmax(0,1fr)] gap-widget-gutter">
           {ring}
           <div className="grid min-h-0 grid-cols-1 gap-widget-gutter lg:grid-cols-[minmax(340px,1.15fr)_2fr]">
-            <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-widget-gutter">
+            <div className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto] gap-widget-gutter">
               <ProductiveCounter
                 productiveSeconds={live.productiveSeconds}
                 goalSeconds={live.dailyGoalSeconds}

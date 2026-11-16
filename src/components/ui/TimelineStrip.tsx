@@ -27,8 +27,11 @@ export function TimelineStrip({
   nowMs,
   heightClass = "h-16",
   ticks = 4,
-  interactive = true
+  interactive = true,
+  fill = false
 }: {
+  /** Grows to the height of its (flex) parent. */
+  fill?: boolean;
   blocks: TimelineBlock[];
   windowStart: number;
   windowSeconds: number;
@@ -49,9 +52,11 @@ export function TimelineStrip({
   tickLabels[ticks] = windowSeconds === 86400 ? "24:00" : tickLabels[ticks];
 
   return (
-    <div>
+    <div className={fill ? "flex min-h-0 flex-1 flex-col" : ""}>
       <div
-        className={`relative w-full overflow-hidden border border-outline-variant bg-surface-container-lowest ${heightClass}`}
+        className={`relative w-full overflow-hidden border border-outline-variant bg-surface-container-lowest ${fill ? "min-h-[64px] flex-1" : heightClass}`}
+        // Faint hatching = nothing recorded (blocks paint over it).
+        style={{ backgroundImage: "repeating-linear-gradient(135deg, rgba(255,255,255,0.05) 0 2px, transparent 2px 9px)" }}
         role="img"
         aria-label={`Activity timeline, ${visible.length} tracked blocks`}
         onMouseLeave={() => setHovered(null)}

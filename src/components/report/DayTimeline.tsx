@@ -24,6 +24,23 @@ export function DayTimeline({
   includeOutside?: boolean;
 }) {
   const blocks = includeOutside ? allBlocks : allBlocks.filter((block) => block.category.name !== OUTSIDE_CHROME);
+  // Compact (TODAY): zoom on the active hours instead of 24h of mostly empty time.
+  const dayStart = dayRange(date).start.getTime();
+  const HOUR = 3600000;
+  let first = 0;
+  let last = 24;
+  if (compact && blocks.length > 0) {
+    const starts = blocks.map((block) => new Date(block.startTime).getTime());
+    const ends = blocks.map((block) => new Date(block.endTime).getTime()).concat(nowMs !== undefined ? [nowMs] : []);
+    first = Math.max(0, Math.floor((Math.min(...starts) - dayStart) / HOUR));
+    last = Math.min(24, Math.ceil((Math.max(...ends) - dayStart) / HOUR));
+    if (last - first < 4) last = Math.min(24, first + 4);
+    // Even span above 12h, so 2-hour ticks land on whole hours.
+    if (last - first > 12 && (last - first) % 2 === 1) last < 24 ? (last += 1) : (first -= 1);
+  }
+  const hours = last - first;
+  const windowStart = dayStart + first * HOUR;
+  const ticks = hours <= 12 ? hours : Math.ceil(hours / 2);
   const legend = new Map<string, TimelineBlock["category"]>();
   for (const block of blocks) if (!block.isIdle) legend.set(block.category.id, block.category);
 
@@ -34,7 +51,7 @@ export function DayTimeline({
       compact={compact}
       className={compact ? "h-full" : ""}
     >
-      <TimelineStrip blocks={blocks} windowStart={dayRange(date).start.getTime()} windowSeconds={86400} nowMs={nowMs} ticks={6} heightClass={compact ? "h-20" : "h-12"} />
+      <TimelineStrip blocks={blocks} windowStart={windowStart} windowSeconds={hours * 3600} nowMs={nowMs} ticks={ticks} heightClass="h-12" fill={compact} />
       <div className="mt-sm flex flex-wrap gap-x-lg gap-y-xs">
         {Array.from(legend.values()).map((category) => (
           <CategoryBadge key={category.id} category={category} size="ui-small" />

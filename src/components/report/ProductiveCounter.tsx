@@ -79,7 +79,7 @@ export function ProductiveCounter({
       className="h-full"
     >
       <div className="flex flex-wrap items-baseline gap-x-md gap-y-xs">
-        <span className={`text-[22px] leading-none ${reached ? "text-secondary-fixed" : running ? "text-primary" : "text-on-background"}`}>
+        <span className={`text-[30px] leading-none ${reached ? "text-secondary-fixed" : running ? "text-primary" : "text-on-background"}`}>
           {formatDuration(productiveSeconds)}
         </span>
         <span className="font-read text-read-sm text-on-surface-variant">{reached ? "Goal reached!" : `${formatCompact(left).toLowerCase()} to go`}</span>

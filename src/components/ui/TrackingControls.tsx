@@ -25,7 +25,7 @@ function isEnabled(action: TrackingAction, state: TrackingState): boolean {
 }
 
 /** ▶/❚❚ toggle + ■ — the server pushes the new state to every open view. */
-export function TrackingControls({ state }: { state: TrackingState }) {
+export function TrackingControls({ state, disabled = false }: { state: TrackingState; disabled?: boolean }) {
   const [busy, setBusy] = useState<TrackingAction | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,7 +56,7 @@ export function TrackingControls({ state }: { state: TrackingState }) {
               type="button"
               aria-label={label}
               title={label}
-              disabled={busy !== null || !isEnabled(button.action, state)}
+              disabled={disabled || busy !== null || !isEnabled(button.action, state)}
               onClick={() => void run(button.action)}
               className={`${arcade} ${button.colors} ${busy === button.action ? "animate-blink" : ""}`}
             >

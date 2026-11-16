@@ -11,6 +11,11 @@ export function LiveProvider({ children }: { children: ReactNode }) {
   return <LiveContext.Provider value={state}>{children}</LiveContext.Provider>;
 }
 
+/** Same as useLive, but null outside the provider (for shared UI pieces). */
+export function useOptionalLive(): SSEState | null {
+  return useContext(LiveContext);
+}
+
 export function useLive(): SSEState {
   const context = useContext(LiveContext);
   if (!context) {

@@ -2,6 +2,7 @@
 
 import type { DailyBreakdown, TimelineBlock } from "@/types";
 import { useDashboard } from "@/hooks/useDashboard";
+import { useLive } from "@/components/providers/LiveProvider";
 import { useApi } from "@/hooks/useApi";
 import { useNow } from "@/hooks/useNow";
 import { Widget } from "@/components/ui/Widget";
@@ -38,6 +39,9 @@ function GetStarted() {
 
 export default function TodayPage() {
   const live = useDashboard();
+  const { connectionStatus, serverStopped } = useLive();
+  // Server unreachable (or shut down by STOP): only the extension can start it.
+  const offline = connectionStatus === "reconnecting";
   const now = useNow(30000);
   const today = todayKey();
 
@@ -63,7 +67,7 @@ export default function TodayPage() {
           meta={
             <span className={`inline-flex items-center gap-xs ${running ? "text-secondary-fixed" : paused ? "text-tertiary" : ""}`}>
               <PixelIcon name={running ? "play" : paused ? "pause" : "stop"} size={8} className={running ? "animate-blink" : ""} />
-              {running ? "RECORDING" : paused ? "PAUSED" : "STOPPED"}
+              {offline ? "SERVER OFF" : running ? "RECORDING" : paused ? "PAUSED" : "STOPPED"}
             </span>
           }
           pulseBorder={running && !live.extensionOnline}
@@ -84,9 +88,13 @@ export default function TodayPage() {
             <div className={`text-[32px] leading-none sm:text-[44px] ${running ? "text-secondary-fixed" : paused ? "text-tertiary" : "text-outline-variant"}`}>
               {formatDuration(live.stopwatchSeconds)}
             </div>
-            <TrackingControls state={live.trackingState} />
+            <TrackingControls state={live.trackingState} disabled={offline} />
             <p className="font-read text-read-sm text-outline">
-              {running
+              {offline
+                ? serverStopped
+                  ? "The server is off. Press play in the Chrome extension to start it again."
+                  : "The server is not answering, so the buttons are disabled."
+                : running
                 ? live.extensionOnline
                   ? active
                     ? `Current activity since ${formatClock(active.startedAt)}.`

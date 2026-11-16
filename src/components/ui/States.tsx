@@ -1,3 +1,6 @@
+"use client";
+
+import { useOptionalLive } from "@/components/providers/LiveProvider";
 import type { ApiError } from "@/types";
 
 export function Loading({ label = "LOADING" }: { label?: string }) {
@@ -15,6 +18,10 @@ export function Empty({ children }: { children: React.ReactNode }) {
 
 /** Inline error for a failed API call, with retry. */
 export function ErrorPanel({ error, onRetry }: { error: ApiError; onRetry?: () => void }) {
+  const live = useOptionalLive();
+  // The server is down: the banner at the top already says so (and why). The
+  // last data stays on screen instead of a wall of identical errors.
+  if (error.code === "CONNECTION_LOST" && live?.connectionStatus === "reconnecting") return null;
   const title =
     error.code === "DB_UNREACHABLE"
       ? "SYS.ERR // DATABASE UNREACHABLE"

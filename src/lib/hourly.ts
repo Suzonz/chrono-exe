@@ -21,7 +21,13 @@ export interface HourBucket {
  * From the first hour with activity to the last one (or the current hour, for
  * today). Hours in between with nothing recorded are kept, empty.
  */
-export function hourlyBuckets(blocks: TimelineBlock[], dayStartMs: number, nowMs?: number): HourBucket[] {
+export function hourlyBuckets(
+  blocks: TimelineBlock[],
+  dayStartMs: number,
+  nowMs?: number,
+  /** Exact hours to show [from, to), e.g. a scrolled window; empty hours included. */
+  range?: { from: number; to: number }
+): HourBucket[] {
   const dayEnd = dayStartMs + 24 * HOUR_MS;
   const spans = blocks
     .map((block) => ({
@@ -30,13 +36,20 @@ export function hourlyBuckets(blocks: TimelineBlock[], dayStartMs: number, nowMs
       end: Math.min(new Date(block.endTime).getTime(), dayEnd, nowMs ?? Infinity)
     }))
     .filter((span) => span.end > span.start);
-  if (spans.length === 0) return [];
+  if (spans.length === 0 && !range) return [];
 
-  let first = Math.floor((Math.min(...spans.map((span) => span.start)) - dayStartMs) / HOUR_MS);
-  let last = Math.ceil((Math.max(...spans.map((span) => span.end)) - dayStartMs) / HOUR_MS);
-  if (nowMs !== undefined && nowMs >= dayStartMs && nowMs < dayEnd) last = Math.max(last, Math.floor((nowMs - dayStartMs) / HOUR_MS) + 1);
-  first = Math.max(0, first);
-  last = Math.min(24, Math.max(last, first + 1));
+  let first: number;
+  let last: number;
+  if (range) {
+    first = Math.max(0, range.from);
+    last = Math.min(24, Math.max(range.to, first + 1));
+  } else {
+    first = Math.floor((Math.min(...spans.map((span) => span.start)) - dayStartMs) / HOUR_MS);
+    last = Math.ceil((Math.max(...spans.map((span) => span.end)) - dayStartMs) / HOUR_MS);
+    if (nowMs !== undefined && nowMs >= dayStartMs && nowMs < dayEnd) last = Math.max(last, Math.floor((nowMs - dayStartMs) / HOUR_MS) + 1);
+    first = Math.max(0, first);
+    last = Math.min(24, Math.max(last, first + 1));
+  }
 
   // Stable stacking order: biggest category of the day at the bottom.
   const totals = new Map<string, { category: BucketCategory; seconds: number }>();

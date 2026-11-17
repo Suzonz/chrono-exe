@@ -39,3 +39,14 @@ describe("hourlyBuckets", () => {
     expect(hourlyBuckets([], day)).toEqual([]);
   });
 });
+
+describe("hourlyBuckets with a window", () => {
+  it("returns exactly the requested hours, empty ones included", () => {
+    const blocks: TimelineBlock[] = [
+      { sessionId: "a", startTime: at(9), endTime: at(9, 30), category: cat("CODING"), isIdle: false, isActive: false, host: null }
+    ];
+    const window = hourlyBuckets(blocks, day, undefined, { from: 2, to: 10 });
+    expect(window.map((bucket) => bucket.hour)).toEqual([2, 3, 4, 5, 6, 7, 8, 9]);
+    expect(window[7].activeSeconds).toBe(1800);
+  });
+});

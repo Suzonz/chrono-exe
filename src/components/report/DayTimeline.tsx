@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { TimelineBlock } from "@/types";
 import { Widget } from "@/components/ui/Widget";
 import { CategoryBadge } from "@/components/ui/CategoryBadge";
@@ -41,8 +41,24 @@ export function DayTimeline({
 }) {
   const [hovered, setHovered] = useState<number | null>(null);
   const blocks = includeOutside ? allBlocks : allBlocks.filter((block) => block.category.name !== OUTSIDE_CHROME);
-  const buckets = hourlyBuckets(blocks, dayRange(date).start.getTime(), nowMs);
+  const dayStart = dayRange(date).start.getTime();
   const currentHour = nowMs !== undefined && date === dayKeyOf(nowMs) ? new Date(nowMs).getHours() : null;
+
+  // A window of hours, scrolled with the arrows. By default it ends at the
+  // current hour (today) or the last active hour (past days).
+  const windowSize = compact ? 8 : 12;
+  const natural = hourlyBuckets(blocks, dayStart, nowMs);
+  const latestEnd = currentHour !== null ? currentHour + 1 : natural.length > 0 ? natural[natural.length - 1].hour + 1 : 24;
+  const [scrolledEnd, setScrolledEnd] = useState<number | null>(null);
+  useEffect(() => setScrolledEnd(null), [date]);
+  const windowEnd = Math.min(latestEnd, Math.max(Math.min(windowSize, latestEnd), scrolledEnd ?? latestEnd));
+  const windowStart = Math.max(0, windowEnd - windowSize);
+  const buckets = natural.length === 0 ? [] : hourlyBuckets(blocks, dayStart, nowMs, { from: windowStart, to: windowEnd });
+  const step = windowSize / 2;
+  const canGoBack = windowStart > 0;
+  const canGoForward = windowEnd < latestEnd;
+  const navButton =
+    "border border-outline-variant px-[6px] py-[1px] text-ui-small text-outline enabled:hover:border-secondary-fixed enabled:hover:text-secondary-fixed disabled:cursor-not-allowed disabled:opacity-30";
   const hoveredBucket = buckets.find((bucket) => bucket.hour === hovered) ?? null;
 
   const legend = new Map<string, TimelineBlock["category"]>();
@@ -54,6 +70,30 @@ export function DayTimeline({
       hint="One column per hour: its height is how many minutes you were active in that hour (out of 60), colored by category. Hover a column for details."
       compact={compact}
       className={compact ? "h-full" : ""}
+      meta={
+        natural.length > 0 ? (
+          <span className="inline-flex items-center gap-xs normal-case">
+            <button type="button" className={navButton} onClick={() => setScrolledEnd(windowEnd - step)} disabled={!canGoBack} aria-label="Earlier hours" title="Earlier hours">
+              {"<"}
+            </button>
+            <span className="min-w-[96px] text-center text-ui-small text-on-surface-variant">
+              {pad(windowStart)}:00-{pad(windowEnd)}:00
+            </span>
+            <button type="button" className={navButton} onClick={() => setScrolledEnd(windowEnd + step)} disabled={!canGoForward} aria-label="Later hours" title="Later hours">
+              {">"}
+            </button>
+            <button
+              type="button"
+              className={navButton}
+              onClick={() => setScrolledEnd(null)}
+              disabled={!canGoForward}
+              title={currentHour !== null ? "Back to now" : "Back to the end of the day"}
+            >
+              {currentHour !== null ? "NOW" : "END"}
+            </button>
+          </span>
+        ) : undefined
+      }
     >
       {buckets.length === 0 ? (
         <Empty>No activity recorded yet.</Empty>

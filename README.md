@@ -202,7 +202,7 @@ Errors share one shape: `{ code, message, details? }`. For example, `VALIDATION_
 ```
 src/
   app/            pages (today, history, settings) + API routes
-  components/     layout shell, live provider, report blocks, UI kit (Widget, PixelIcon, TimelineStrip, SegmentedBar…)
+  components/     layout shell, live provider, report blocks, UI kit (Widget, PixelIcon, SegmentedBar, ScopeToggle…)
   hooks/          useSSE, useDashboard, useApi, useDateParam, useNow
   lib/            glob, categorizer, sessionLogic, sessionManager, aggregate, stats, summary, sse, time
   types/          shared domain and API types

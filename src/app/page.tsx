@@ -92,7 +92,7 @@ export default function TodayPage() {
       compact
     >
       <div className="flex flex-col items-center gap-md text-center" aria-live="polite">
-        <div className={`text-[36px] leading-none ${running ? "text-secondary-fixed" : paused ? "text-tertiary" : "text-outline-variant"}`}>
+        <div className={`text-[28px] leading-none 2xl:text-[36px] ${running ? "text-secondary-fixed" : paused ? "text-tertiary" : "text-outline-variant"}`}>
           {formatDuration(live.stopwatchSeconds)}
         </div>
         <div className="flex min-h-[18px] max-w-full items-center justify-center">

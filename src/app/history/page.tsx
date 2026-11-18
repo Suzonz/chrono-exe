@@ -115,18 +115,20 @@ function DayView({ date, refreshKey, scope }: { date: string; refreshKey: number
       <SummaryLine text={summarizeDay(data, isToday)} />
       <LimitWarnings alerts={data.limitAlerts} />
       <div className="grid grid-cols-1 items-start gap-widget-gutter xl:grid-cols-2">
-        <TimeRing
-          hint={scopeHint("this day", scope)}
-          groups={data.categories}
-          totalSeconds={data.totalTrackedSeconds}
-          centerLabel={scope === "all" ? "ON YOUR PC" : "IN CHROME"}
-          previousSeconds={data.previous.totalTrackedSeconds}
-          previousLabel="the day before"
-          idleSeconds={data.idleSeconds}
-          showLimits
-        />
         <div className="grid content-start gap-widget-gutter">
+          <TimeRing
+            hint={scopeHint("this day", scope)}
+            groups={data.categories}
+            totalSeconds={data.totalTrackedSeconds}
+            centerLabel={scope === "all" ? "ON YOUR PC" : "IN CHROME"}
+            previousSeconds={data.previous.totalTrackedSeconds}
+            previousLabel="the day before"
+            idleSeconds={data.idleSeconds}
+            showLimits
+          />
           <ProductivityCard productivity={data.productivity} previousScore={data.previous.productivityScore} previousLabel="the day before" />
+        </div>
+        <div className="grid content-start gap-widget-gutter">
           <TopSites sites={data.sites} hint="The websites you spent the most time on this day." />
           <BackgroundAudio entries={data.backgroundAudio} />
         </div>
@@ -149,16 +151,18 @@ function WeekView({ date, refreshKey, scope, onSelectDay }: { date: string; refr
     <div className="grid gap-widget-gutter">
       <SummaryLine text={summarizeWeek(data)} />
       <div className="grid grid-cols-1 items-start gap-widget-gutter xl:grid-cols-2">
-        <TimeRing
-          hint={scopeHint("this week", scope)}
-          groups={data.weeklyTotals}
-          totalSeconds={data.totalTrackedSeconds}
-          centerLabel="THIS WEEK"
-          previousSeconds={data.previous.totalTrackedSeconds}
-          previousLabel="last week"
-        />
         <div className="grid content-start gap-widget-gutter">
+          <TimeRing
+            hint={scopeHint("this week", scope)}
+            groups={data.weeklyTotals}
+            totalSeconds={data.totalTrackedSeconds}
+            centerLabel="THIS WEEK"
+            previousSeconds={data.previous.totalTrackedSeconds}
+            previousLabel="last week"
+          />
           <ProductivityCard productivity={data.productivity} previousScore={data.previous.productivityScore} previousLabel="last week" />
+        </div>
+        <div className="grid content-start gap-widget-gutter">
           <TopSites sites={data.sites} hint="The websites you spent the most time on this week." />
         </div>
       </div>
@@ -210,16 +214,18 @@ function MonthView({ date, refreshKey, scope, onSelectDay }: { date: string; ref
     <div className="grid gap-widget-gutter">
       <SummaryLine text={summarizeMonth(data)} />
       <div className="grid grid-cols-1 items-start gap-widget-gutter xl:grid-cols-2">
-        <TimeRing
-          hint={scopeHint("this month", scope)}
-          groups={data.categories}
-          totalSeconds={data.monthlyTotal}
-          centerLabel="THIS MONTH"
-          previousSeconds={data.previous.totalTrackedSeconds}
-          previousLabel="last month"
-        />
         <div className="grid content-start gap-widget-gutter">
+          <TimeRing
+            hint={scopeHint("this month", scope)}
+            groups={data.categories}
+            totalSeconds={data.monthlyTotal}
+            centerLabel="THIS MONTH"
+            previousSeconds={data.previous.totalTrackedSeconds}
+            previousLabel="last month"
+          />
           <ProductivityCard productivity={data.productivity} previousScore={data.previous.productivityScore} previousLabel="last month" />
+        </div>
+        <div className="grid content-start gap-widget-gutter">
           <TopSites sites={data.sites} hint="The websites you spent the most time on this month." />
         </div>
       </div>

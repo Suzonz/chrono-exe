@@ -2,7 +2,7 @@
 
 > See where your screen time goes. A retro, arcade-style time tracker for Chrome.
 
-![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)
+[![CI](https://github.com/Suzonz/chrono-exe/actions/workflows/ci.yml/badge.svg)](https://github.com/Suzonz/chrono-exe/actions/workflows/ci.yml)
 ![Backend coverage](https://img.shields.io/badge/backend%20coverage-86%25-15ffd1)
 ![License](https://img.shields.io/badge/license-MIT-7c3aed)
 ![Stack](https://img.shields.io/badge/Next.js%2014%20·%20TypeScript%20·%20Prisma%20·%20SQLite-7c3aed)
@@ -121,7 +121,7 @@ Heartbeats are idempotent: replaying the same timestamp never creates a duplicat
 **Prerequisites:** Node.js ≥ 18.18 and Google Chrome. No database server is needed.
 
 ```bash
-git clone <repo-url> chrono-exe && cd chrono-exe
+git clone https://github.com/Suzonz/chrono-exe.git && cd chrono-exe
 npm install
 cp .env.example .env        # DATABASE_URL="file:./chrono.db"
 npm run setup               # creates the local database and default categories

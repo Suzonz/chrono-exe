@@ -4,6 +4,7 @@
 
 ![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)
 ![Backend coverage](https://img.shields.io/badge/backend%20coverage-86%25-15ffd1)
+![License](https://img.shields.io/badge/license-MIT-7c3aed)
 ![Stack](https://img.shields.io/badge/Next.js%2014%20·%20TypeScript%20·%20Prisma%20·%20SQLite-7c3aed)
 
 CHRONO.EXE measures what you do in your browser and turns it into a history you can analyze. Press play, browse as usual, and a Chrome extension reports what you are doing. The app then tells you where your time went: which categories, which websites, how productive the day was, and how it compares with yesterday or last week.
@@ -221,3 +222,7 @@ docs/             architecture, UI guidelines, initial PRD, screenshots
 | --- | --- | --- |
 | `DATABASE_URL` | `file:./chrono.db` | SQLite file, relative to `prisma/` |
 | `SSE_INACTIVITY_THRESHOLD_MS` | `120000` | Silence after which the extension counts as offline and the open activity is closed |
+
+## License
+
+[MIT](LICENSE)

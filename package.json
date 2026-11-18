@@ -60,5 +60,6 @@
   "description": "Passive, real-time time tracking with a Chrome extension and a retro terminal dashboard.",
   "engines": {
     "node": ">=18.18"
-  }
+  },
+  "license": "MIT"
 }

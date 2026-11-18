@@ -184,7 +184,7 @@ describe("settings routes", () => {
     const sessions = await import("@/app/api/sessions/route");
     expect(((await call(timeline.GET, "GET", `/api/timeline?date=${today()}`)).body as unknown as unknown[]).length).toBeGreaterThan(0);
     expect(((await call(sessions.GET, "GET", `/api/sessions?date=${today()}`)).body as unknown as unknown[]).length).toBeGreaterThan(0);
-    expect((await call(stats.GET, "GET", `/api/stats?period=week&date=${today()}`)).body).toHaveProperty("days");
+    expect((await call(stats.GET, "GET", `/api/stats?period=week&date=${today()}`)).body).toHaveProperty("backgroundAudio");
     expect((await call(stats.GET, "GET", `/api/stats?period=month&date=${today()}`)).body).toHaveProperty("monthlyTotal");
     expect((await call(stats.GET, "GET", "/api/stats?period=year&date=nope")).status).toBe(400);
   });

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { handleError, parseQuery } from "@/lib/api";
 import { loadAudioBeats, loadSessions } from "@/lib/stats";
-import { buildDailyBreakdown, buildMonthlyHeatmap, buildWeeklyBreakdown } from "@/lib/aggregate";
+import { backgroundAudioTotals, buildDailyBreakdown, buildMonthlyHeatmap, buildWeeklyBreakdown } from "@/lib/aggregate";
 import { applyScope, SCOPES } from "@/lib/scope";
 import { addDays, addMonths, DATE_KEY_REGEX, dayRange, startOfMonthKey, startOfWeekKey } from "@/lib/time";
 
@@ -32,12 +32,14 @@ export async function GET(request: Request): Promise<NextResponse> {
     if (period === "week") {
       const weekStart = startOfWeekKey(date);
       const sessions = await load(dayRange(addDays(weekStart, -7)).start, dayRange(addDays(weekStart, 6)).end);
-      return NextResponse.json(buildWeeklyBreakdown(sessions, weekStart));
+      const audio = await loadAudioBeats(dayRange(weekStart).start, dayRange(addDays(weekStart, 6)).end);
+      return NextResponse.json({ ...buildWeeklyBreakdown(sessions, weekStart), backgroundAudio: backgroundAudioTotals(audio) });
     }
 
     const monthStart = startOfMonthKey(date);
     const sessions = await load(dayRange(addMonths(monthStart, -1)).start, dayRange(addMonths(monthStart, 1)).start);
-    return NextResponse.json(buildMonthlyHeatmap(sessions, monthStart));
+    const audio = await loadAudioBeats(dayRange(monthStart).start, dayRange(addMonths(monthStart, 1)).start);
+    return NextResponse.json({ ...buildMonthlyHeatmap(sessions, monthStart), backgroundAudio: backgroundAudioTotals(audio) });
   } catch (error) {
     return handleError(error, "stats.get");
   }

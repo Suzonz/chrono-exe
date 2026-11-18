@@ -130,7 +130,7 @@ function DayView({ date, refreshKey, scope }: { date: string; refreshKey: number
         </div>
         <div className="grid content-start gap-widget-gutter">
           <TopSites sites={data.sites} hint="The websites you spent the most time on this day." />
-          <BackgroundAudio entries={data.backgroundAudio} />
+          <BackgroundAudio entries={data.backgroundAudio} period="this day" />
         </div>
       </div>
       <DayTimeline date={date} blocks={timeline.data ?? []} nowMs={isToday ? Date.now() : undefined} includeOutside={scope === "all"} />
@@ -164,6 +164,7 @@ function WeekView({ date, refreshKey, scope, onSelectDay }: { date: string; refr
         </div>
         <div className="grid content-start gap-widget-gutter">
           <TopSites sites={data.sites} hint="The websites you spent the most time on this week." />
+          <BackgroundAudio entries={data.backgroundAudio ?? []} period="this week" />
         </div>
       </div>
 
@@ -227,6 +228,7 @@ function MonthView({ date, refreshKey, scope, onSelectDay }: { date: string; ref
         </div>
         <div className="grid content-start gap-widget-gutter">
           <TopSites sites={data.sites} hint="The websites you spent the most time on this month." />
+          <BackgroundAudio entries={data.backgroundAudio ?? []} period="this month" />
         </div>
       </div>
 

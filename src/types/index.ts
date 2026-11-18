@@ -237,6 +237,8 @@ export interface DaySlot {
 
 export interface WeeklyBreakdown {
   weekStart: string;
+  /** Sites heard in background tabs (added by the stats route). */
+  backgroundAudio?: { host: string; seconds: number }[];
   totalTrackedSeconds: number;
   days: DaySlot[];
   weeklyTotals: Omit<CategoryBreakdown, "sessions">[];
@@ -253,6 +255,8 @@ export interface HeatmapDay {
 
 export interface MonthlyHeatmap {
   month: string;
+  /** Sites heard in background tabs (added by the stats route). */
+  backgroundAudio?: { host: string; seconds: number }[];
   days: HeatmapDay[];
   monthlyTotal: number;
   activeDays: number;

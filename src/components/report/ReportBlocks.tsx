@@ -116,8 +116,7 @@ export function SummaryLine({ text }: { text: string }) {
 }
 
 /** Sites that played sound in background tabs: shown for information, never counted. */
-export function BackgroundAudio({ entries, compact = false }: { entries: { host: string; seconds: number }[]; compact?: boolean }) {
-  if (entries.length === 0 && !compact) return null;
+export function BackgroundAudio({ entries, compact = false, period = "today" }: { entries: { host: string; seconds: number }[]; compact?: boolean; period?: string }) {
   return (
     <Widget
       title="BACKGROUND AUDIO"
@@ -125,7 +124,7 @@ export function BackgroundAudio({ entries, compact = false }: { entries: { host:
       compact={compact}
       className={compact ? "h-full" : ""}
     >
-      {entries.length === 0 ? <p className="font-read text-read-sm text-outline">Nothing played in the background today.</p> : null}
+      {entries.length === 0 ? <p className="font-read text-read-sm text-outline">Nothing played in the background {period}.</p> : null}
       <ul className={`space-y-xs font-read text-read ${compact ? "min-h-0 overflow-hidden" : ""}`}>
         {entries.map((entry) => (
           <li key={entry.host} className="flex justify-between gap-sm">

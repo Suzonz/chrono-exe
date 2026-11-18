@@ -87,6 +87,8 @@ Everything runs on your own computer, and the database is a single local file. N
 
 ## Architecture
 
+The full write-up, with data flow, launcher, aggregation rules and trade-offs, is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The visual rules are in [docs/UI_GUIDELINES.md](docs/UI_GUIDELINES.md).
+
 ```
 ┌──────────────────────┐  POST /api/heartbeat    ┌───────────────────────────────────────┐
 │  Chrome extension    │ ─ every 30s + on tab ─► │  Next.js API                          │
@@ -210,7 +212,7 @@ extension/        Chrome MV3 extension (background service worker + popup)
 launcher/         native messaging host: starts the server when play is pressed
 prisma/           schema, migrations, seed, demo data
 __tests__/        unit tests (lib) and integration tests (api)
-docs/             PRD, architecture, UI guidelines, screenshots
+docs/             architecture, UI guidelines, initial PRD, screenshots
 ```
 
 ## Configuration

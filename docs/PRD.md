@@ -1,9 +1,26 @@
 # CHRONO.EXE — Product Requirements Document
 
 **Version:** 1.0.0  
-**Status:** Draft  
+**Status:** Initial specification (kept for reference)  
 **Last Updated:** 2026-05-06  
 **Author:** Senior Product Architect  
+
+> **This is the original spec the project started from. The shipped product evolved from it.** For how it works today, see [ARCHITECTURE.md](ARCHITECTURE.md) and the [README](../README.md). The main changes:
+>
+> - **Storage.** SQLite (one local file) instead of MySQL in Docker.
+> - **Screens.** Three screens: TODAY, HISTORY (day, week, month) and SETTINGS. The `/breakdown` and `/timeline` pages were merged into TODAY and HISTORY.
+> - **Manual tracking control.** Play, pause and stop in the app and in the extension popup. Nothing is recorded while stopped.
+> - **Starting the server.** A native launcher lets ▶ start the local server, and ■ stops it (Windows).
+> - **Measurement.**
+>   - Time in other apps counts as `OUTSIDE_CHROME`.
+>   - Tab and app switches are reported immediately.
+>   - Background audio is shown but never counted.
+> - **Analysis.**
+>   - Top sites, a productivity score (productive / neutral / distracting categories), and trends against the previous period.
+>   - Daily limits per category, with notifications.
+>   - An **INCLUDE OUTSIDE CHROME** checkbox that switches every figure between the whole computer and Chrome only.
+> - **Daily goal.** It applies to *productive* time (4h by default), and is set from TODAY.
+> - **Privacy.** No query strings or page titles are stored. The history can be exported, restored and deleted.
 
 ---
 

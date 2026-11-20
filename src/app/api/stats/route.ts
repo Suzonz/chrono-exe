@@ -12,21 +12,26 @@ const querySchema = z.object({
   period: z.enum(["day", "week", "month"]),
   date: z.string().regex(DATE_KEY_REGEX),
   /** "chrome": leave out the time spent in other apps. */
-  scope: z.enum(SCOPES).default("all")
+  scope: z.enum(SCOPES).default("all"),
+  /** Day only: start of the current session (ISO). The report then covers [from, end of day). */
+  from: z.string().datetime({ offset: true }).optional()
 });
 
 export async function GET(request: Request): Promise<NextResponse> {
   const parsed = parseQuery(request, querySchema);
   if (!parsed.ok) return parsed.response;
-  const { period, date, scope } = parsed.data;
+  const { period, date, scope, from } = parsed.data;
   const load = async (start: Date, end: Date) => applyScope(await loadSessions(start, end, { withHosts: true }), scope);
 
   try {
     if (period === "day") {
       // Includes the day before, for the "vs yesterday" trend.
-      const sessions = await load(dayRange(addDays(date, -1)).start, dayRange(date).end);
-      const audio = await loadAudioBeats(dayRange(date).start, dayRange(date).end);
-      return NextResponse.json(buildDailyBreakdown(sessions, date, audio));
+      const { end } = dayRange(date);
+      const window = from ? { start: new Date(from), end } : undefined;
+      const yesterday = dayRange(addDays(date, -1)).start;
+      const sessions = await load(window && window.start < yesterday ? window.start : yesterday, end);
+      const audio = await loadAudioBeats(window?.start ?? dayRange(date).start, end);
+      return NextResponse.json(buildDailyBreakdown(sessions, date, audio, window));
     }
 
     if (period === "week") {

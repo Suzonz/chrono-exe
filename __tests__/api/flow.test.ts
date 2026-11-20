@@ -186,6 +186,10 @@ describe("settings routes", () => {
     expect(((await call(sessions.GET, "GET", `/api/sessions?date=${today()}`)).body as unknown as unknown[]).length).toBeGreaterThan(0);
     expect((await call(stats.GET, "GET", `/api/stats?period=week&date=${today()}`)).body).toHaveProperty("backgroundAudio");
     expect((await call(stats.GET, "GET", `/api/stats?period=month&date=${today()}`)).body).toHaveProperty("monthlyTotal");
+    // Session view: a window that starts in the future holds nothing yet.
+    const future = encodeURIComponent(new Date(Date.now() + 3600_000).toISOString());
+    expect((await call(stats.GET, "GET", `/api/stats?period=day&date=${today()}&from=${future}`)).body).toMatchObject({ totalTrackedSeconds: 0 });
+    expect((await call(stats.GET, "GET", `/api/stats?period=day&date=${today()}&from=nope`)).status).toBe(400);
     expect((await call(stats.GET, "GET", "/api/stats?period=year&date=nope")).status).toBe(400);
   });
 
@@ -193,8 +197,8 @@ describe("settings routes", () => {
     process.env.CHRONO_LAUNCHER = "1";
     const exit = jest.spyOn(process, "exit").mockImplementation(() => undefined as never);
     const stopped = await tracking.POST(new Request(`${BASE}/api/tracking`, json("POST", { action: "stop" })));
-    const body = (await stopped.json()) as { serverStopping?: boolean; tracking: { state: string; accumulatedSeconds: number } };
-    expect(body.tracking).toMatchObject({ state: "STOPPED", accumulatedSeconds: 0 });
+    const body = (await stopped.json()) as { serverStopping?: boolean; tracking: { state: string; runStartedAt: string | null } };
+    expect(body.tracking).toMatchObject({ state: "STOPPED", runStartedAt: null });
     expect(body.serverStopping).toBe(true);
     const store = globalThis as { __chronoShutdown?: ReturnType<typeof setTimeout> };
     expect(store.__chronoShutdown).toBeDefined();

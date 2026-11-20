@@ -46,8 +46,7 @@ const backupSchema = z.object({
       dailyGoalSeconds: z.number().int(),
       inactivityDelaySeconds: z.number().int(),
       trackingState: z.string().default("STOPPED"),
-      runStartedAt: nullableDate.default(null),
-      runAccumulatedSeconds: z.number().int().default(0)
+      runStartedAt: nullableDate.default(null)
     })
   ),
   categories: z.array(
@@ -143,7 +142,7 @@ export async function DELETE(request: Request): Promise<NextResponse> {
 
   try {
     const [heartbeats, sessions] = await prisma.$transaction([prisma.heartbeat.deleteMany(), prisma.session.deleteMany()]);
-    await prisma.settings.updateMany({ data: { trackingState: "STOPPED", runStartedAt: null, runAccumulatedSeconds: 0 } });
+    await prisma.settings.updateMany({ data: { trackingState: "STOPPED", runStartedAt: null } });
     void broadcastSnapshot();
     return NextResponse.json({ deleted: true, sessions: sessions.count, heartbeats: heartbeats.count });
   } catch (error) {

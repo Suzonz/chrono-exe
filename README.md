@@ -11,7 +11,7 @@ CHRONO.EXE measures what you do in your browser and turns it into a history you 
 
 Everything runs on your own computer, and the database is a single local file. No browsing data leaves your machine.
 
-![TODAY screen](docs/screenshots/today.png)
+![SESSION screen](docs/screenshots/today.png)
 
 | History: week | Extension popup |
 | --- | --- |
@@ -26,13 +26,13 @@ Everything runs on your own computer, and the database is a single local file. N
 ## Features
 
 **Three screens**
-- **TODAY**:
+- **SESSION**: the current session, from the moment you press play.
   - play / pause / stop with a stopwatch, and the category and site you are on;
   - a live **productive-time counter**, with the daily goal set right there (- / + buttons, 15 min steps);
-  - a one-line summary of the day;
   - a **pixel-art ring** of where the time went, with the share of each category (hover a slice for details);
-  - productivity score, top sites, background audio and an hour-by-hour timeline.
-- **INCLUDE OUTSIDE CHROME** checkbox, on TODAY and HISTORY, and remembered:
+  - productivity score, top sites, background audio and an hour-by-hour chart;
+  - a **TODAY** checkbox next to the title widens every block to the whole day, with the comparison to yesterday.
+- **INCLUDE OUTSIDE CHROME** checkbox, on SESSION and HISTORY, and remembered:
   - checked, the figures cover the whole computer;
   - unchecked, they cover only what happens in Chrome;
   - every block follows it, so totals, percentages, scores and trends always describe the same thing.

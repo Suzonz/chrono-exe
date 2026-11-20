@@ -5,10 +5,10 @@ The look is an **old arcade game / terminal**: dark violet surfaces, hard square
 ## 1. Principles
 
 1. **Readable first, retro second.** Titles and numbers use the pixel font. Sentences use the readable pixel font. Nothing below 8px.
-2. **Every block explains itself.** Each widget has a short title and a one-sentence hint (a `(?)` tooltip on dense screens such as TODAY).
-3. **Same rules everywhere.** The same ring, colors, productivity score and scope checkbox are used on TODAY and HISTORY.
+2. **Every block explains itself.** Each widget has a short title and a one-sentence hint (a `(?)` tooltip on dense screens such as SESSION).
+3. **Same rules everywhere.** The same ring, colors, productivity score and scope checkbox are used on SESSION and HISTORY.
 4. **Interface in English**, sentence style for hints, UPPERCASE for titles and labels.
-5. **Desktop first.** TODAY fits one screen from 1280px wide. Below that, blocks stack and the page scrolls.
+5. **Desktop first.** SESSION fits one screen from 1280px wide. Below that, blocks stack and the page scrolls.
 
 ## 2. Typography
 
@@ -53,7 +53,7 @@ Press Start 2P has no glyphs for `▸ ◂ → ▲` or typographic apostrophes. U
 | `ProductiveCounter` | Live productive time, segmented progress bar, − / + goal (15 min steps), score |
 | `DayTimeline` | One column per hour (0–60 min), stacked by category, 5-minute pixel grid, away time hatched, ‹ › NOW navigation |
 | `SegmentedBar` | Retro progress bar made of blocks |
-| `ScopeToggle` | Pixel checkbox INCLUDE OUTSIDE CHROME |
+| `PixelCheckbox` / `ScopeToggle` | Pixel checkbox. Used for INCLUDE OUTSIDE CHROME, and for TODAY next to the SESSION title |
 | `CategoryBadge` | Color square + category name |
 | `ErrorPanel`, `Loading`, `Empty`, `StatusBanner` | States: `SYS.ERR // …` panels, blinking `LOADING...`, banners for connection lost, database offline, server off and extension silent |
 

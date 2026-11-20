@@ -11,7 +11,7 @@ How the pieces fit together, and why they are built this way. For setup and usag
 │  service worker           │ ─────────► │  API routes (Zod) → categorizer → sessions    │
 │  · 30s alarm + tab/app    │  /api/...  │  → SQLite (Prisma) → SSE broadcast            │
 │    switch events          │            │                                              │
-│  · chrome.idle, audible   │            │  React app: TODAY · HISTORY · SETTINGS        │
+│  · chrome.idle, audible   │            │  React app: SESSION · HISTORY · SETTINGS      │
 │  · popup ▶ ❚❚ ■, badge    │ ◄───────── │  (live snapshots over SSE, reports over REST) │
 └────────────┬──────────────┘   pulse    └──────────────────────────────────────────────┘
              │ sendNativeMessage                         ▲ starts (detached)
@@ -66,7 +66,7 @@ The protocol is one length-prefixed JSON message in and one out. Each call is lo
 | `IgnorePattern` | Sites that are never stored |
 | `Session` | A continuous stretch in one category: `startedAt`, `endedAt`, `durationSeconds`, `isIdle`, `heartbeatCount` |
 | `Heartbeat` | Raw signal: sanitized URL, timestamp, background audio. `@@unique([sessionId, timestamp])` makes replays idempotent. Deleting a session cascades |
-| `Settings` | Productive goal, away delay, and the stopwatch state (`trackingState`, `runStartedAt`, `runAccumulatedSeconds`) |
+| `Settings` | Productive goal, away delay, and the stopwatch state (`trackingState`, `runStartedAt`: when play was pressed, kept across pauses) |
 
 **Privacy.** `sanitizeUrl` drops query strings and fragments before storage, and page titles are never stored. *Settings → YOUR DATA* exports, restores or deletes everything (`/api/data`).
 
@@ -106,6 +106,7 @@ All report math is in `src/lib/aggregate.ts` and `src/lib/hourly.ts`. Both are p
 - **Limits.** A category is flagged when its active time today reaches its limit.
 - **Trends.** The previous period (yesterday, last week, last month) is loaded in the same query and aggregated the same way, so `+35m vs yesterday` always compares like with like.
 - **Scope.** With `?scope=chrome`, `applyScope` drops `OUTSIDE_CHROME` sessions *before* aggregation. Totals, percentages, scores and trends then all describe the same thing. The INCLUDE OUTSIDE CHROME checkbox drives it, and its value is remembered in `localStorage`.
+- **Current session.** A session runs from play to stop, and pause keeps it. Play always starts a new one, also when the server or the computer was shut down without stop. Its totals (`run` in the live snapshot, see `runTotals`) only count recorded time, so pauses and sleep never inflate the stopwatch. Reports for the SESSION page pass `?from=<session start>` to narrow the day to it.
 - **Hour by hour.** `hourlyBuckets` clips every session to each hour: active seconds per category plus away seconds. The chart shows an 8h window (12h in HISTORY) that can be scrolled back to 00:00.
 - **Background audio.** Each heartbeat that reports audio credits those hosts until the next heartbeat, capped at 30s.
 
@@ -123,7 +124,7 @@ All report math is in `src/lib/aggregate.ts` and `src/lib/hourly.ts`. Both are p
 
 | Screen | Content |
 | --- | --- |
-| TODAY | One screen without scrolling (from 1280px wide): now tracking, top sites, pixel ring with the scope checkbox, productive time with the − / + goal, background audio, hour-by-hour chart |
+| SESSION | One screen without scrolling (from 1280px wide): now tracking, top sites, pixel ring with the scope checkbox, productive time with the − / + goal, background audio, hour-by-hour chart. It covers the current session; the TODAY checkbox widens it to the whole day |
 | HISTORY | DAY / WEEK / MONTH, each with the ring, productivity, top sites and background audio. DAY adds the hour chart and an activity log with CSV export, WEEK stacked day bars, MONTH a heatmap calendar |
 | SETTINGS | Categories (type, color, limit), site rules with a live URL tester, ignored sites, preferences, your data |
 

@@ -6,6 +6,8 @@ import { NAV_ITEMS, isActivePath, pageTitle } from "@/components/layout/nav";
 import { useNow } from "@/hooks/useNow";
 import { formatClock, formatLongDay } from "@/lib/time";
 
+export const HEADER_TOOLS_ID = "header-tools";
+
 export function Header() {
   const pathname = usePathname();
   const now = useNow(1000);
@@ -14,7 +16,11 @@ export function Header() {
   return (
     <header className="fixed left-0 right-0 top-0 z-40 border-b border-primary-container bg-surface-container md:left-[220px]">
       <div className="flex h-[48px] items-center justify-between gap-md px-md">
-        <h1 className="text-h2 uppercase text-on-background">{pageTitle(pathname)}</h1>
+        <div className="flex min-w-0 items-center gap-lg">
+          <h1 className="text-h2 uppercase text-on-background">{pageTitle(pathname)}</h1>
+          {/* Pages can put a control next to the title (SESSION: the TODAY checkbox). */}
+          <div id={HEADER_TOOLS_ID} className="flex items-center" />
+        </div>
         <div className="flex items-center gap-md text-label uppercase tracking-widest text-primary">
           <span className="hidden lg:inline" suppressHydrationWarning>
             {formatLongDay(date)}

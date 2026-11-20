@@ -88,10 +88,8 @@ model Settings {
   inactivityDelaySeconds Int       @default(300)
   /// RUNNING | PAUSED | STOPPED — controlled by the play / pause / stop buttons.
   trackingState          String    @default("STOPPED")
-  /// Start of the current running stretch (null while paused or stopped).
+  /// When play was pressed after a stop. Kept across pauses, null when stopped.
   runStartedAt           DateTime?
-  /// Stopwatch time accumulated before the current stretch (kept across pauses).
-  runAccumulatedSeconds  Int       @default(0)
   updatedAt              DateTime  @updatedAt
 }
 

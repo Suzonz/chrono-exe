@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import type { DailyBreakdown, TimelineBlock } from "@/types";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useLive } from "@/components/providers/LiveProvider";
@@ -13,7 +15,9 @@ import { ErrorPanel, Loading } from "@/components/ui/States";
 import { BackgroundAudio, TopSites } from "@/components/report/ReportBlocks";
 import { TimeRing } from "@/components/report/TimeRing";
 import { ProductiveCounter } from "@/components/report/ProductiveCounter";
-import { ScopeToggle } from "@/components/ui/ScopeToggle";
+import { PixelCheckbox, ScopeToggle } from "@/components/ui/ScopeToggle";
+import { HEADER_TOOLS_ID } from "@/components/layout/Header";
+import { useFullDay } from "@/hooks/useFullDay";
 import { useIncludeOutside } from "@/hooks/useIncludeOutside";
 import { DayTimeline } from "@/components/report/DayTimeline";
 import { siteLabel } from "@/lib/glob";
@@ -40,7 +44,24 @@ function GetStarted() {
   );
 }
 
-export default function TodayPage() {
+/** The TODAY checkbox, drawn next to the page title in the header. */
+function FullDayToggle({ checked, onChange }: { checked: boolean; onChange: (value: boolean) => void }) {
+  const [target, setTarget] = useState<HTMLElement | null>(null);
+  useEffect(() => setTarget(document.getElementById(HEADER_TOOLS_ID)), []);
+  if (!target) return null;
+  return createPortal(
+    <PixelCheckbox
+      checked={checked}
+      onChange={onChange}
+      label="TODAY"
+      detail={checked ? "Whole day" : "This session only"}
+      title={checked ? "Uncheck to see only the current session (since play)" : "Check to see the whole day"}
+    />,
+    target
+  );
+}
+
+export default function SessionPage() {
   const live = useDashboard();
   const { connectionStatus, serverStopped } = useLive();
   // Server unreachable (or shut down by STOP): only the extension can start it.
@@ -48,9 +69,14 @@ export default function TodayPage() {
   const now = useNow(30000);
   const today = todayKey();
   const { includeOutside, setIncludeOutside, scope } = useIncludeOutside();
+  const { fullDay, setFullDay } = useFullDay();
+  // SESSION shows what was recorded since play; the TODAY checkbox widens it to the whole day.
+  // Stopped: no session yet, so the window starts now and stays empty until play.
+  const sessionStart = live.runStartedAt ?? new Date(now).toISOString();
+  const from = fullDay ? "" : `&from=${encodeURIComponent(sessionStart)}`;
 
   // Reports refresh whenever the server pushes a new live snapshot.
-  const report = useApi<DailyBreakdown>(`/api/stats?period=day&date=${today}&scope=${scope}`, live.revision);
+  const report = useApi<DailyBreakdown>(live.ready ? `/api/stats?period=day&date=${today}&scope=${scope}${from}` : null, live.revision);
   const timeline = useApi<TimelineBlock[]>(`/api/timeline?date=${today}`, live.revision);
 
   if (!live.ready) return <Loading label="BOOTING CHRONO.EXE" />;
@@ -93,7 +119,7 @@ export default function TodayPage() {
     >
       <div className="flex flex-col items-center gap-md text-center" aria-live="polite">
         <div className={`text-[28px] leading-none 2xl:text-[36px] ${running ? "text-secondary-fixed" : paused ? "text-tertiary" : "text-outline-variant"}`}>
-          {formatDuration(live.stopwatchSeconds)}
+          {formatDuration(live.run.recordedSeconds)}
         </div>
         <div className="flex min-h-[18px] max-w-full items-center justify-center">
           {running && active && !active.isIdle ? (
@@ -110,19 +136,22 @@ export default function TodayPage() {
     </Widget>
   );
 
+  // Live totals of what the page shows: the session, or the whole day.
+  const shown = fullDay
+    ? { tracked: live.totalTrackedSeconds, productive: live.productiveSeconds, idle: live.idleSeconds, outside: live.outsideSeconds }
+    : { tracked: live.run.trackedSeconds, productive: live.run.productiveSeconds, idle: live.run.idleSeconds, outside: live.run.outsideSeconds };
+  const period = fullDay ? "today" : "this session";
+  const sessionStartMs = live.runStartedAt ? new Date(live.runStartedAt).getTime() : now;
+
   const ring = day ? (
     <TimeRing
-      hint={
-        includeOutside
-          ? "Your active time today on the whole computer, per category. Hover a slice for details. Time away from the keyboard is not counted."
-          : "Your active time today in Chrome only, per category. Hover a slice for details. Time away from the keyboard is not counted."
-      }
+      hint={`Your active time ${period} ${includeOutside ? "on the whole computer" : "in Chrome only"}, per category. Hover a slice for details. Time away from the keyboard is not counted.`}
       groups={day.categories}
-      totalSeconds={includeOutside ? live.totalTrackedSeconds : Math.max(0, live.totalTrackedSeconds - live.outsideSeconds)}
+      totalSeconds={includeOutside ? shown.tracked : Math.max(0, shown.tracked - shown.outside)}
       centerLabel={includeOutside ? "ON YOUR PC" : "IN CHROME"}
-      previousSeconds={day.previous.totalTrackedSeconds}
-      previousLabel="yesterday"
-      idleSeconds={live.idleSeconds}
+      previousSeconds={fullDay ? day.previous.totalTrackedSeconds : undefined}
+      previousLabel={fullDay ? "yesterday" : undefined}
+      idleSeconds={shown.idle}
       showLimits
       live
       fill
@@ -134,6 +163,7 @@ export default function TodayPage() {
 
   return (
     <div className="grid gap-widget-gutter">
+      <FullDayToggle checked={fullDay} onChange={setFullDay} />
       {live.lastHeartbeatAt === null ? <GetStarted /> : null}
       {report.error ? <ErrorPanel error={report.error} onRetry={report.reload} /> : null}
 
@@ -141,7 +171,7 @@ export default function TodayPage() {
       <div className="grid grid-cols-1 gap-widget-gutter xl:h-[calc(100vh-124px)] xl:min-h-[600px] xl:grid-cols-[minmax(260px,1fr)_3fr]">
         <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-widget-gutter">
           {timer}
-          {day ? <TopSites sites={day.sites} hint="The websites you spent the most time on today." compact /> : <div />}
+          {day ? <TopSites sites={day.sites} hint={`The websites you spent the most time on ${period}.`} compact /> : <div />}
         </div>
 
         <div className="grid min-h-0 grid-rows-[minmax(0,1.25fr)_minmax(0,1fr)] gap-widget-gutter">
@@ -149,15 +179,25 @@ export default function TodayPage() {
           <div className="grid min-h-0 grid-cols-1 gap-widget-gutter lg:grid-cols-[minmax(340px,1.15fr)_2fr]">
             <div className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto] gap-widget-gutter">
               <ProductiveCounter
-                productiveSeconds={live.productiveSeconds}
+                productiveSeconds={shown.productive}
+                dayProductiveSeconds={live.productiveSeconds}
+                sessionOnly={!fullDay}
                 goalSeconds={live.dailyGoalSeconds}
                 running={running}
                 score={day?.productivity.score ?? null}
-                previousScore={day?.previous.productivityScore ?? null}
+                previousScore={fullDay ? (day?.previous.productivityScore ?? null) : undefined}
               />
-              <BackgroundAudio entries={day?.backgroundAudio ?? []} compact />
+              <BackgroundAudio entries={day?.backgroundAudio ?? []} period={period} compact />
             </div>
-            <DayTimeline date={today} blocks={timeline.data ?? []} nowMs={now} includeOutside={includeOutside} compact />
+            <DayTimeline
+              date={today}
+              blocks={timeline.data ?? []}
+              nowMs={now}
+              includeOutside={includeOutside}
+              fromMs={fullDay ? undefined : sessionStartMs}
+              title={fullDay ? "YOUR DAY, HOUR BY HOUR" : "YOUR SESSION, HOUR BY HOUR"}
+              compact
+            />
           </div>
         </div>
       </div>

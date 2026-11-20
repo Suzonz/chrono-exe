@@ -78,8 +78,9 @@ export function TimeRing({
   /** Shown in the center: can tick live, while slices refresh with the report. */
   totalSeconds: number;
   centerLabel: string;
-  previousSeconds: number;
-  previousLabel: string;
+  /** Omit to hide the trend. */
+  previousSeconds?: number;
+  previousLabel?: string;
   idleSeconds?: number;
   showLimits?: boolean;
 }) {
@@ -182,7 +183,7 @@ export function TimeRing({
       <div className="mt-md flex shrink-0 flex-wrap items-center justify-between gap-x-lg gap-y-sm border-t border-outline-variant pt-sm">
         {toolbar}
         <div className="ml-auto flex flex-wrap items-center gap-x-lg gap-y-xs">
-          <Trend current={totalSeconds} previous={previousSeconds} label={previousLabel} />
+          {previousSeconds !== undefined && previousLabel ? <Trend current={totalSeconds} previous={previousSeconds} label={previousLabel} /> : null}
           {idleSeconds !== undefined ? (
             <span className="font-read text-read-sm text-outline">Away from keyboard: {formatCompact(idleSeconds).toLowerCase()} (not counted)</span>
           ) : null}

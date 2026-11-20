@@ -5,13 +5,13 @@
 
 import type { DashboardState } from "@/types";
 import prisma from "@/lib/prisma";
-import { buildDailyBreakdown } from "@/lib/aggregate";
+import { buildDailyBreakdown, sessionEnd } from "@/lib/aggregate";
 import { loadSessions } from "@/lib/stats";
 import { closeStaleSession } from "@/lib/sessionManager";
 import { inactivityThresholdMs, lastBeatOf } from "@/lib/sessionLogic";
 import { dayRange, todayKey } from "@/lib/time";
 import { isCategoryColor } from "@/lib/palette";
-import { toStatus } from "@/lib/trackingStatus";
+import { runTotals, toStatus } from "@/lib/trackingStatus";
 import { hostOf } from "@/lib/glob";
 import { asProductivity } from "@/lib/categoryRef";
 import { OUTSIDE_CHROME } from "@/lib/scope";
@@ -65,8 +65,40 @@ export async function buildDashboardState(now = new Date()): Promise<DashboardSt
   const liveTracked = active && !active.isIdle ? sinceLastBeat : 0;
   const liveIdle = active && active.isIdle ? sinceLastBeat : 0;
 
+  const tracking = toStatus(settings);
+  const runStart = tracking.runStartedAt ? new Date(tracking.runStartedAt) : null;
+  const runSessions = runStart
+    ? await prisma.session.findMany({
+        where: { OR: [{ endedAt: null }, { endedAt: { gt: runStart } }] },
+        select: { startedAt: true, endedAt: true, durationSeconds: true, isIdle: true, category: { select: { name: true, productivity: true } } }
+      })
+    : [];
+  const run = runTotals(
+    runSessions.map((session) => ({
+      startedAt: session.startedAt,
+      end: sessionEnd(session),
+      isIdle: session.isIdle,
+      productive: session.category.productivity === "PRODUCTIVE",
+      outside: session.category.name === OUTSIDE_CHROME
+    })),
+    runStart,
+    now
+  );
+  // The open session keeps counting up to "now", like the day totals below.
+  const liveRun = tracking.state === "RUNNING" && active ? sinceLastBeat : 0;
+  if (liveRun > 0 && active) {
+    run.recordedSeconds += liveRun;
+    if (active.isIdle) run.idleSeconds += liveRun;
+    else {
+      run.trackedSeconds += liveRun;
+      if (active.category.productivity === "PRODUCTIVE") run.productiveSeconds += liveRun;
+      if (active.category.name === OUTSIDE_CHROME) run.outsideSeconds += liveRun;
+    }
+  }
+
   return {
-    tracking: toStatus(settings),
+    tracking,
+    run,
     activeSession: active
       ? {
           sessionId: active.id,

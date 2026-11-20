@@ -29,8 +29,13 @@ export function DayTimeline({
   blocks: allBlocks,
   nowMs,
   includeOutside = true,
-  compact = false
+  compact = false,
+  fromMs,
+  title = "YOUR DAY, HOUR BY HOUR"
 }: {
+  /** Only show what happened after this moment (the current session). */
+  fromMs?: number;
+  title?: string;
   /** Fills its grid cell (TODAY). */
   compact?: boolean;
   date: string;
@@ -40,7 +45,8 @@ export function DayTimeline({
   includeOutside?: boolean;
 }) {
   const [hovered, setHovered] = useState<number | null>(null);
-  const blocks = includeOutside ? allBlocks : allBlocks.filter((block) => block.category.name !== OUTSIDE_CHROME);
+  const scoped = includeOutside ? allBlocks : allBlocks.filter((block) => block.category.name !== OUTSIDE_CHROME);
+  const blocks = fromMs === undefined ? scoped : clipBlocks(scoped, fromMs);
   const dayStart = dayRange(date).start.getTime();
   const currentHour = nowMs !== undefined && date === dayKeyOf(nowMs) ? new Date(nowMs).getHours() : null;
 
@@ -66,7 +72,7 @@ export function DayTimeline({
 
   return (
     <Widget
-      title="YOUR DAY, HOUR BY HOUR"
+      title={title}
       hint="One column per hour: its height is how many minutes you were active in that hour (out of 60), colored by category. Hover a column for details."
       compact={compact}
       className={compact ? "h-full" : ""}
@@ -172,4 +178,12 @@ export function DayTimeline({
 function dayKeyOf(ms: number): string {
   const date = new Date(ms);
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+/** Blocks cut at `fromMs`: what happened before it is left out. */
+function clipBlocks(blocks: TimelineBlock[], fromMs: number): TimelineBlock[] {
+  const from = new Date(fromMs).toISOString();
+  return blocks
+    .filter((block) => block.isActive || new Date(block.endTime).getTime() > fromMs)
+    .map((block) => (new Date(block.startTime).getTime() < fromMs ? { ...block, startTime: from } : block));
 }

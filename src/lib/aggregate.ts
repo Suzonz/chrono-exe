@@ -185,9 +185,17 @@ function longestFocusOf(items: Clipped[]): FocusStretch | null {
   };
 }
 
-/** Sessions must cover the day and the day before (for the trend). */
-export function buildDailyBreakdown(sessions: RawSession[], dateKey: string, audioBeats: AudioBeat[] = []): DailyBreakdown {
-  const { start, end } = dayRange(dateKey);
+/**
+ * Sessions must cover the day and the day before (for the trend). `window`
+ * narrows the report to the current session instead of the whole day.
+ */
+export function buildDailyBreakdown(
+  sessions: RawSession[],
+  dateKey: string,
+  audioBeats: AudioBeat[] = [],
+  window?: { start: Date; end: Date }
+): DailyBreakdown {
+  const { start, end } = window ?? dayRange(dateKey);
   const items = clip(sessions, start, end);
   const categories = groupByCategory(items);
   const yesterday = dayRange(addDays(dateKey, -1));

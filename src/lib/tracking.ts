@@ -1,7 +1,8 @@
 /**
  * @file src/lib/tracking.ts
  * @description START / PAUSE / STOP control. Heartbeats are only stored while
- * tracking is RUNNING; the stopwatch survives pauses and resets on STOP.
+ * tracking is RUNNING. A run starts on play and survives pauses;
+ * the stopwatch itself is computed from recorded sessions (trackingStatus.ts).
  */
 
 import prisma from "@/lib/prisma";
@@ -56,16 +57,15 @@ export async function applyTrackingAction(
   now.setMilliseconds(0);
 
   if (action === "start") {
-    if (state !== "RUNNING") {
-      await prisma.settings.update({
-        where: { id: settings.id },
-        data: {
-          trackingState: "RUNNING",
-          runStartedAt: now,
-          runAccumulatedSeconds: state === "PAUSED" ? settings.runAccumulatedSeconds : 0
-        }
-      });
-    }
+    // Resuming from pause keeps the run. Otherwise play starts a new one, also
+    // when the state was left RUNNING by a server or computer that shut down.
+    await prisma.settings.update({
+      where: { id: settings.id },
+      data: {
+        trackingState: "RUNNING",
+        runStartedAt: state === "PAUSED" && settings.runStartedAt ? settings.runStartedAt : now
+      }
+    });
     // Open a session right away so the dashboard reacts instantly.
     const source = page ?? recentPage();
     const category = source ? await categorize(source.url) : await getCategoryByName(FALLBACK_CATEGORY);
@@ -81,18 +81,14 @@ export async function applyTrackingAction(
 
   if (action === "pause" && state === "RUNNING") {
     await closeOpenSession(now);
-    const elapsed = settings.runStartedAt ? Math.floor((now.getTime() - settings.runStartedAt.getTime()) / 1000) : 0;
-    await prisma.settings.update({
-      where: { id: settings.id },
-      data: { trackingState: "PAUSED", runStartedAt: null, runAccumulatedSeconds: settings.runAccumulatedSeconds + elapsed }
-    });
+    await prisma.settings.update({ where: { id: settings.id }, data: { trackingState: "PAUSED" } });
   }
 
   if (action === "stop" && state !== "STOPPED") {
     await closeOpenSession(now);
     await prisma.settings.update({
       where: { id: settings.id },
-      data: { trackingState: "STOPPED", runStartedAt: null, runAccumulatedSeconds: 0 }
+      data: { trackingState: "STOPPED", runStartedAt: null }
     });
   }
 

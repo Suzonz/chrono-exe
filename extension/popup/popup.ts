@@ -8,7 +8,8 @@ export {};
 type TrackingState = "RUNNING" | "PAUSED" | "STOPPED";
 
 interface Snapshot {
-  tracking: { state: TrackingState; runStartedAt: string | null; accumulatedSeconds: number };
+  tracking: { state: TrackingState; runStartedAt: string | null };
+  run: { recordedSeconds: number };
   activeSession: { categoryName: string; categoryColor: string; isIdle: boolean } | null;
   totalTrackedSeconds: number;
   generatedAt: string;
@@ -127,12 +128,9 @@ function render(): void {
         : "...";
   stateLabel.className = css;
 
-  // Stopwatch: accumulated time + current running stretch (ticks locally).
-  let seconds = snapshot?.tracking.accumulatedSeconds ?? 0;
-  if (snapshot && state === "RUNNING" && snapshot.tracking.runStartedAt) {
-    const serverNow = new Date(snapshot.generatedAt).getTime() + (Date.now() - receivedAt);
-    seconds += Math.floor((serverNow - new Date(snapshot.tracking.runStartedAt).getTime()) / 1000);
-  }
+  // Stopwatch: recorded time since play, ticking locally while a session is open.
+  let seconds = snapshot?.run.recordedSeconds ?? 0;
+  if (snapshot && state === "RUNNING" && snapshot.activeSession) seconds += Math.floor((Date.now() - receivedAt) / 1000);
   const clock = $("clock");
   clock.textContent = formatDuration(seconds);
   clock.className = css;

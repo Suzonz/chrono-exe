@@ -153,14 +153,25 @@ export type TrackingAction = "start" | "pause" | "stop";
 
 export interface TrackingStatus {
   state: TrackingState;
-  /** Start of the current running stretch, null while paused or stopped. */
+  /** When play was pressed after a stop (kept across pauses), null when stopped. */
   runStartedAt: string | null;
-  /** Stopwatch seconds accumulated before the current stretch. */
-  accumulatedSeconds: number;
+}
+
+/** Time recorded since play was pressed. Pauses and gaps (computer asleep) are not counted. */
+export interface RunTotals {
+  /** Active + away: the stopwatch. */
+  recordedSeconds: number;
+  /** Active time (away excluded). */
+  trackedSeconds: number;
+  productiveSeconds: number;
+  idleSeconds: number;
+  outsideSeconds: number;
 }
 
 export interface DashboardState {
   tracking: TrackingStatus;
+  /** The current session: everything recorded since play was pressed, at `generatedAt`. */
+  run: RunTotals;
   activeSession: ActiveSessionState | null;
   dailyGoalSeconds: number;
   totalTrackedSeconds: number;

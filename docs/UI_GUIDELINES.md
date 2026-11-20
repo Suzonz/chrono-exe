@@ -50,7 +50,7 @@ Press Start 2P has no glyphs for `▸ ◂ → ▲` or typographic apostrophes. U
 | `PixelIcon` | 7×7 SVG sprites (`play`, `pause`, `stop`, `minus`, `plus`, `check`), drawn with `crispEdges` |
 | `TrackingControls` | Big square arcade buttons: one ▶/❚❚ toggle and ■. Icon only, with the label in `aria-label` and `title` |
 | `TimeRing` | Pixel donut (29×29 grid). The center shows the total, or the hovered category. The legend shows %, duration and limits |
-| `ProductiveCounter` | Live productive time, segmented progress bar, − / + goal (15 min steps), score |
+| `ProductiveCounter` | Live productive time, segmented progress bar, − / + goal (15 min steps) |
 | `DayTimeline` | One column per hour (0–60 min), stacked by category, 5-minute pixel grid, away time hatched, ‹ › NOW navigation |
 | `SegmentedBar` | Retro progress bar made of blocks |
 | `ScopeToggle` | Pixel checkbox INCLUDE OUTSIDE CHROME |

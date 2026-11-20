@@ -20,26 +20,21 @@ const stepButton =
  * Live productive time against the daily goal, set right here with the - / +
  * buttons (15 min steps, saved automatically). The big number can show the
  * current session while the bar and "to go" always follow the whole day.
- * Also shows the productivity score (share of active time that was productive).
  */
 export function ProductiveCounter({
   productiveSeconds,
   dayProductiveSeconds = productiveSeconds,
   sessionOnly = false,
   goalSeconds,
-  running,
-  score,
-  previousScore
+  running
 }: {
   productiveSeconds: number;
   /** Productive time of the whole day, for the goal (defaults to productiveSeconds). */
   dayProductiveSeconds?: number;
-  /** The big number and the score describe the current session. */
+  /** The big number describes the current session. */
   sessionOnly?: boolean;
   goalSeconds: number;
   running: boolean;
-  score: number | null;
-  previousScore?: number | null;
 }) {
   // Local goal while clicking; the server value takes over once saved.
   const [draft, setDraft] = useState<number | null>(null);
@@ -74,16 +69,14 @@ export function ProductiveCounter({
   const pct = goal > 0 ? Math.min(100, (dayProductiveSeconds / goal) * 100) : 0;
   const reached = dayProductiveSeconds >= goal;
   const left = Math.max(0, goal - dayProductiveSeconds);
-  const delta = score !== null && previousScore !== undefined && previousScore !== null ? score - previousScore : null;
-  const scoreColor = score === null ? "text-outline" : score >= 60 ? "text-secondary-fixed" : score >= 35 ? "text-tertiary" : "text-error";
 
   return (
     <Widget
       title="PRODUCTIVE TIME"
       hint={
         sessionOnly
-          ? "Time spent this session on categories marked productive (choose them in Settings). The bar and the goal count the whole day: set it with - and +. The score is the share of this session that was productive."
-          : "Time spent today on categories marked productive (choose them in Settings). Set your daily goal with - and +. The score is the share of your active time that was productive."
+          ? "Time spent this session on categories marked productive (choose them in Settings). The bar and the goal count the whole day: set it with - and +."
+          : "Time spent today on categories marked productive (choose them in Settings). Set your daily goal with - and +."
       }
       meta={<span className={reached ? "text-secondary-fixed" : ""}>{reached ? "GOAL REACHED!" : `${Math.round(pct)}%`}</span>}
       compact
@@ -100,7 +93,7 @@ export function ProductiveCounter({
         <SegmentedBar value={pct} total={20} heightClass="h-3" color={reached ? "#15ffd1" : "#7c3aed"} label="Progress towards the productive goal" />
       </div>
 
-      <div className="mt-auto flex items-center justify-between gap-sm pt-sm">
+      <div className="mt-auto flex items-center gap-sm pt-sm">
         <div className="flex items-center gap-sm">
           <button type="button" className={stepButton} onClick={() => change(-STEP_SECONDS)} disabled={goal <= MIN_GOAL} aria-label="Lower the goal by 15 minutes" title="-15 min">
             <PixelIcon name="minus" size={14} />
@@ -114,18 +107,6 @@ export function ProductiveCounter({
           <button type="button" className={stepButton} onClick={() => change(STEP_SECONDS)} disabled={goal >= MAX_GOAL} aria-label="Raise the goal by 15 minutes" title="+15 min">
             <PixelIcon name="plus" size={14} />
           </button>
-        </div>
-        <div className="text-right" title={sessionOnly ? "Share of this session spent on productive categories" : "Share of your active time spent on productive categories, compared with yesterday"}>
-          <div className="text-[9px] text-outline">SCORE</div>
-          <div className="mt-[2px] flex items-baseline justify-end gap-sm whitespace-nowrap">
-            <span className={`text-ui-small ${scoreColor}`}>{score === null ? "--" : `${score}%`}</span>
-            {delta !== null ? (
-              <span className={`font-read text-read-sm ${delta > 0 ? "text-secondary-fixed" : delta < 0 ? "text-error" : "text-outline"}`} title="Compared with yesterday">
-                {delta > 0 ? "+" : ""}
-                {delta} pts
-              </span>
-            ) : null}
-          </div>
         </div>
       </div>
       {error ? <p className="mt-xs font-read text-read-sm text-error">&gt; {error}</p> : null}

@@ -200,8 +200,6 @@ export default function SessionPage() {
                 sessionOnly={!fullDay}
                 goalSeconds={live.dailyGoalSeconds}
                 running={running}
-                score={day?.productivity.score ?? null}
-                previousScore={fullDay ? (day?.previous.productivityScore ?? null) : undefined}
               />
               <BackgroundAudio entries={day?.backgroundAudio ?? []} period={period} compact />
             </div>

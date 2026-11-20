@@ -15,14 +15,18 @@ type Tab = "CATEGORIES" | "SITE RULES" | "IGNORED SITES" | "PREFERENCES" | "YOUR
 const TABS: Tab[] = ["CATEGORIES", "SITE RULES", "IGNORED SITES", "PREFERENCES", "YOUR DATA"];
 const SYSTEM = ["IDLE", "OTHER"];
 
+// Typed values use the readable font (20px); buttons and labels the pixel font at 10-12px.
 const input =
-  "border border-outline-variant bg-surface-container-lowest px-sm py-xs text-label text-on-background placeholder:text-outline-variant focus:border-secondary-fixed focus:outline-none";
+  "border-2 border-outline-variant bg-surface-container-lowest px-sm py-[6px] font-read text-read text-on-background placeholder:text-outline-variant focus:border-secondary-fixed focus:outline-none";
 const ghostButton =
-  "border border-outline-variant px-sm py-xs text-ui-small text-outline hover:border-secondary-fixed hover:text-secondary-fixed disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-outline-variant disabled:hover:text-outline";
+  "border-2 border-outline-variant px-md py-sm text-label text-outline hover:border-secondary-fixed hover:text-secondary-fixed disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-outline-variant disabled:hover:text-outline";
 const dangerButton =
-  "border border-outline-variant px-sm py-xs text-ui-small text-outline hover:border-error hover:text-error disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-outline-variant disabled:hover:text-outline";
+  "border-2 border-outline-variant px-md py-sm text-label text-outline hover:border-error hover:text-error disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-outline-variant disabled:hover:text-outline";
 const primaryButton =
-  "border border-primary-container bg-primary-container px-md py-xs text-label text-white hover:brightness-110 disabled:opacity-40";
+  "border-2 border-primary-container bg-primary-container px-md py-sm text-label text-white hover:brightness-110 disabled:opacity-40";
+const fieldLabel = "mb-sm block text-label text-secondary-fixed";
+const moveButton =
+  "grid h-7 w-7 place-items-center border border-outline-variant text-label text-outline hover:border-secondary-fixed hover:text-secondary-fixed disabled:cursor-not-allowed disabled:opacity-20 disabled:hover:border-outline-variant disabled:hover:text-outline";
 
 function useMutation() {
   const [error, setError] = useState<ApiError | null>(null);
@@ -47,7 +51,7 @@ function useMutation() {
 function InlineError({ error }: { error: ApiError | null }) {
   if (!error) return null;
   return (
-    <div role="alert" className="mt-sm text-ui-small text-error">
+    <div role="alert" className="mt-sm text-label text-error">
       &gt; ERR: {error.message.toUpperCase()}
     </div>
   );
@@ -63,7 +67,7 @@ function move<T>(list: T[], index: number, delta: number): T[] {
 
 function ColorPicker({ value, onChange, label }: { value: CategoryColor; onChange: (color: CategoryColor) => void; label: string }) {
   return (
-    <div className="flex flex-wrap gap-[3px]" role="radiogroup" aria-label={label}>
+    <div className="flex flex-wrap gap-xs" role="radiogroup" aria-label={label}>
       {CATEGORY_COLORS.map((color) => (
         <button
           type="button"
@@ -73,7 +77,7 @@ function ColorPicker({ value, onChange, label }: { value: CategoryColor; onChang
           title={color.toUpperCase()}
           key={color}
           onClick={() => onChange(color)}
-          className={`h-5 w-5 border-2 ${value === color ? "border-on-background" : "border-transparent hover:border-outline"}`}
+          className={`h-7 w-7 border-2 ${value === color ? "border-on-background" : "border-transparent hover:border-outline"}`}
           style={{ backgroundColor: PALETTE[color] }}
         />
       ))}
@@ -102,10 +106,10 @@ function LimitField({ category, onSave }: { category: Category; onSave: (seconds
     else setValue(initial);
   };
   return (
-    <label className="flex items-center gap-xs font-read text-read-sm text-outline">
+    <label className="flex items-center gap-sm font-read text-read text-on-surface-variant">
       Limit
       <input
-        className={`${input} w-16 text-center`}
+        className={`${input} w-20 text-center`}
         inputMode="numeric"
         value={value}
         placeholder="none"
@@ -138,7 +142,7 @@ function CategoriesTab({ categories, reload }: { categories: Category[]; reload:
   };
 
   return (
-    <div className="grid grid-cols-1 gap-widget-gutter xl:grid-cols-[2fr_1fr]">
+    <div className="grid grid-cols-1 gap-widget-gutter xl:grid-cols-[minmax(0,3fr)_minmax(280px,1fr)]">
       <Widget
         title="CATEGORIES"
         hint="Each website you visit lands in a category. Mark categories as productive or distracting to get your productivity score, and set a daily limit to get a warning."
@@ -150,13 +154,13 @@ function CategoriesTab({ categories, reload }: { categories: Category[]; reload:
             const isSystem = SYSTEM.includes(category.name);
             const isIdle = category.name === "IDLE";
             return (
-              <li key={category.id} className="border-b border-outline-variant py-sm last:border-0">
+              <li key={category.id} className="border-b border-outline-variant py-md last:border-0">
                 <div className="flex flex-wrap items-center gap-sm">
-                  <div className="flex flex-col">
-                    <button type="button" className="px-xs text-ui-small text-outline hover:text-secondary-fixed disabled:opacity-20" disabled={index === 0 || mutation.busy} onClick={() => reorder(index, -1)} aria-label={`Move ${category.name} up`}>
+                  <div className="flex gap-xs">
+                    <button type="button" className={moveButton} disabled={index === 0 || mutation.busy} onClick={() => reorder(index, -1)} aria-label={`Move ${category.name} up`}>
                       ^
                     </button>
-                    <button type="button" className="px-xs text-ui-small text-outline hover:text-secondary-fixed disabled:opacity-20" disabled={index === categories.length - 1 || mutation.busy} onClick={() => reorder(index, 1)} aria-label={`Move ${category.name} down`}>
+                    <button type="button" className={moveButton} disabled={index === categories.length - 1 || mutation.busy} onClick={() => reorder(index, 1)} aria-label={`Move ${category.name} down`}>
                       v
                     </button>
                   </div>
@@ -179,7 +183,7 @@ function CategoriesTab({ categories, reload }: { categories: Category[]; reload:
                       }}
                     >
                       <input
-                        className={`${input} w-40`}
+                        className={`${input} w-52`}
                         value={editing.name}
                         disabled={isSystem}
                         maxLength={32}
@@ -197,14 +201,14 @@ function CategoriesTab({ categories, reload }: { categories: Category[]; reload:
                     </form>
                   ) : (
                     <>
-                      <div className="min-w-[130px] flex-1">
-                        <CategoryBadge category={category} />
-                        {isIdle ? <p className="font-read text-read-sm text-outline">Time away from the keyboard. Never counted.</p> : null}
+                      <div className="min-w-[150px] flex-1">
+                        <CategoryBadge category={category} size="body" />
+                        {isIdle ? <p className="mt-xs font-read text-read text-outline">Time away from the keyboard. Never counted.</p> : null}
                       </div>
                       {!isIdle ? (
                         <>
                           <select
-                            className={`${input} font-read text-read-sm`}
+                            className={input}
                             value={category.productivity}
                             aria-label={`Type of ${category.name}`}
                             style={{ color: PRODUCTIVITY_COLOR[category.productivity] }}
@@ -263,16 +267,16 @@ function CategoriesTab({ categories, reload }: { categories: Category[]; reload:
           }}
         >
           <label className="block">
-            <span className="mb-xs block text-ui-small text-outline">NAME</span>
+            <span className={fieldLabel}>NAME</span>
             <input className={`${input} w-full`} value={name} onChange={(event) => setName(event.target.value)} placeholder="LEARNING" maxLength={32} required />
           </label>
           <div>
-            <span className="mb-xs block text-ui-small text-outline">COLOR</span>
+            <span className={fieldLabel}>COLOR</span>
             <ColorPicker value={color} onChange={setColor} label="New category color" />
           </div>
           <label className="block">
-            <span className="mb-xs block text-ui-small text-outline">TYPE</span>
-            <select className={`${input} w-full font-read text-read-sm`} value={productivity} onChange={(event) => setProductivity(event.target.value as Productivity)}>
+            <span className={fieldLabel}>TYPE</span>
+            <select className={`${input} w-full`} value={productivity} onChange={(event) => setProductivity(event.target.value as Productivity)}>
               {PRODUCTIVITY_LEVELS.map((level) => (
                 <option key={level} value={level}>
                   {PRODUCTIVITY_LABEL[level]}
@@ -281,7 +285,7 @@ function CategoriesTab({ categories, reload }: { categories: Category[]; reload:
             </select>
           </label>
           <div className="flex items-center justify-between gap-sm">
-            {name.trim() ? <CategoryBadge category={{ name: name.trim().toUpperCase().replace(/\s+/g, "_"), color }} size="ui-small" /> : <span />}
+            {name.trim() ? <CategoryBadge category={{ name: name.trim().toUpperCase().replace(/\s+/g, "_"), color }} size="body" /> : <span />}
             <button type="submit" className={primaryButton} disabled={mutation.busy || !name.trim()}>
               + ADD
             </button>
@@ -321,7 +325,7 @@ function RuleTester({ rules, categories, ignore }: { rules: Rule[]; categories: 
         ) : (
           <span className="flex flex-wrap items-center gap-sm text-outline">
             &gt; {result.rule ? `Rule #${rules.indexOf(result.rule) + 1} "${result.rule.pattern}" sends it to` : "No rule matches, so it goes to"}
-            {result.category ? <CategoryBadge category={result.category} size="ui-small" /> : null}
+            {result.category ? <CategoryBadge category={result.category} size="body" /> : null}
           </span>
         )}
       </div>
@@ -357,13 +361,13 @@ function RuleRow({
   };
 
   return (
-    <li className="grid grid-cols-[28px_1fr] items-center gap-sm border-b border-outline-variant py-sm last:border-0 sm:grid-cols-[28px_1fr_160px_auto]">
-      <div className="flex flex-col items-center">
-        <button type="button" className="text-ui-small text-outline hover:text-secondary-fixed disabled:opacity-20" disabled={index === 0 || busy} onClick={() => onMove(-1)} aria-label={`Move rule ${rule.pattern} up`}>
+    <li className="grid grid-cols-[104px_1fr] items-center gap-md border-b border-outline-variant py-sm last:border-0 sm:grid-cols-[104px_1fr_220px_auto]">
+      <div className="flex items-center gap-xs">
+        <span className="w-7 text-right text-label text-outline">{index + 1}</span>
+        <button type="button" className={moveButton} disabled={index === 0 || busy} onClick={() => onMove(-1)} aria-label={`Move rule ${rule.pattern} up`}>
           ^
         </button>
-        <span className="text-ui-small text-outline-variant">{index + 1}</span>
-        <button type="button" className="text-ui-small text-outline hover:text-secondary-fixed disabled:opacity-20" disabled={index === total - 1 || busy} onClick={() => onMove(1)} aria-label={`Move rule ${rule.pattern} down`}>
+        <button type="button" className={moveButton} disabled={index === total - 1 || busy} onClick={() => onMove(1)} aria-label={`Move rule ${rule.pattern} down`}>
           v
         </button>
       </div>
@@ -419,7 +423,7 @@ function RulesTab({ rules, categories, ignore, reload }: { rules: Rule[]; catego
       hint="Which category each website goes to. Rules are checked from top to bottom and the first match wins. Sites with no rule go to OTHER."
       meta={`${rules.length} RULES`}
     >
-      <p className="mb-md font-read text-read-sm text-outline">
+      <p className="mb-md font-read text-read text-outline">
         Use * as a wildcard: <span className="text-on-surface-variant">*.github.com</span> (GitHub and its subdomains),{" "}
         <span className="text-on-surface-variant">localhost:*</span> (any local port), <span className="text-on-surface-variant">*notion.so*</span> (anything containing notion.so).
       </p>
@@ -445,7 +449,7 @@ function RulesTab({ rules, categories, ignore, reload }: { rules: Rule[]; catego
       )}
 
       <form
-        className="mt-md grid grid-cols-1 gap-sm border border-dashed border-primary-container p-sm sm:grid-cols-[1fr_160px_auto]"
+        className="mt-md grid grid-cols-1 gap-md border-2 border-dashed border-primary-container p-md sm:grid-cols-[1fr_220px_auto]"
         onSubmit={(event) => {
           event.preventDefault();
           void mutation.run(() => apiFetch("/api/rules", { method: "POST", body: JSON.stringify({ pattern, categoryId: selectedCategory }) }), () => {
@@ -488,8 +492,8 @@ function IgnoreTab({ patterns, reload }: { patterns: IgnorePattern[]; reload: ()
       ) : (
         <ul className="space-y-xs">
           {patterns.map((item) => (
-            <li key={item.id} className="flex items-center justify-between gap-sm border border-outline-variant px-sm py-xs">
-              <span className="truncate text-label text-on-surface-variant">{item.pattern}</span>
+            <li key={item.id} className="flex items-center justify-between gap-md border border-outline-variant px-md py-sm">
+              <span className="truncate font-read text-read text-on-background">{item.pattern}</span>
               <button
                 type="button"
                 className={dangerButton}
@@ -569,7 +573,7 @@ function PreferencesTab({ settings }: { settings: Settings }) {
           <label className="block">
             <span className="mb-sm block text-label text-secondary-fixed">PRODUCTIVE GOAL</span>
             <input
-              className={`${input} w-28 text-center ${goalSeconds === null || goalSeconds < 60 ? "border-error" : ""}`}
+              className={`${input} w-32 text-center ${goalSeconds === null || goalSeconds < 60 ? "border-error" : ""}`}
               value={goal}
               inputMode="numeric"
               placeholder="04:00"
@@ -580,8 +584,8 @@ function PreferencesTab({ settings }: { settings: Settings }) {
                 if (seconds !== null && seconds >= 60) schedule({ dailyGoalSeconds: seconds });
               }}
             />
-            <span id="goal-help" className="mt-xs block font-read text-read-sm text-outline">
-              How much productive time you aim for each day (hours:minutes). Only categories marked Productive count. You can also change it from the TODAY screen.
+            <span id="goal-help" className="mt-xs block font-read text-read text-outline">
+              How much productive time you aim for each day (hours:minutes). Only categories marked Productive count. You can also change it from the SESSION screen.
             </span>
           </label>
 
@@ -601,7 +605,7 @@ function PreferencesTab({ settings }: { settings: Settings }) {
                 schedule({ inactivityDelaySeconds: minutes * 60 });
               }}
             />
-            <span className="mt-xs block font-read text-read-sm text-outline">
+            <span className="mt-xs block font-read text-read text-outline">
               After {delayMinutes} minutes without touching the mouse or keyboard, you are marked as away and that time stops counting.
             </span>
           </label>
@@ -616,7 +620,7 @@ function PreferencesTab({ settings }: { settings: Settings }) {
           <li>Click &quot;Load unpacked&quot; and pick the /extension folder</li>
           <li>Pin CHRONO.EXE: its icon shows your time today and the popup has play, pause and stop</li>
         </ol>
-        <p className="mt-md font-read text-read-sm text-outline">
+        <p className="mt-md font-read text-read text-outline">
           Every 30 seconds it sends the address of your active tab and whether you are at the keyboard. Everything stays on your computer.
         </p>
       </Widget>
@@ -692,7 +696,7 @@ function DataTab({ onRestored }: { onRestored: () => void }) {
           &gt; {message.text}
         </p>
       ) : null}
-      <p className="font-read text-read-sm text-outline xl:col-span-3">
+      <p className="font-read text-read text-outline xl:col-span-3">
         Everything is stored in a single file on your computer (prisma/chrono.db). Page addresses are kept without their query strings, and page titles are never stored.
       </p>
     </div>

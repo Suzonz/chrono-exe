@@ -31,7 +31,7 @@ Everything runs on your own computer, and the database is a single local file. N
   - a live **productive-time counter**, with the daily goal set right there (- / + buttons, 15 min steps);
   - a **pixel-art ring** of where the time went, with the share of each category (hover a slice for details);
   - productivity score, top sites, background audio and an hour-by-hour chart;
-  - a **TODAY** checkbox next to the title widens every block to the whole day, with the comparison to yesterday.
+  - a **SESSION / TODAY** switch at the top: TODAY shows the whole day in every block, stopwatch included, with the comparison to yesterday.
 - **INCLUDE OUTSIDE CHROME** checkbox, on SESSION and HISTORY, and remembered:
   - checked, the figures cover the whole computer;
   - unchecked, they cover only what happens in Chrome;

@@ -53,7 +53,8 @@ Press Start 2P has no glyphs for `▸ ◂ → ▲` or typographic apostrophes. U
 | `ProductiveCounter` | Live productive time, segmented progress bar, − / + goal (15 min steps), score |
 | `DayTimeline` | One column per hour (0–60 min), stacked by category, 5-minute pixel grid, away time hatched, ‹ › NOW navigation |
 | `SegmentedBar` | Retro progress bar made of blocks |
-| `PixelCheckbox` / `ScopeToggle` | Pixel checkbox. Used for INCLUDE OUTSIDE CHROME, and for TODAY next to the SESSION title |
+| `ScopeToggle` | Pixel checkbox INCLUDE OUTSIDE CHROME |
+| Tabs | Joined square buttons, the selected one filled violet: DAY / WEEK / MONTH in HISTORY, SESSION / TODAY in the header of the home page |
 | `CategoryBadge` | Color square + category name |
 | `ErrorPanel`, `Loading`, `Empty`, `StatusBanner` | States: `SYS.ERR // …` panels, blinking `LOADING...`, banners for connection lost, database offline, server off and extension silent |
 

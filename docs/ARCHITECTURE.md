@@ -124,7 +124,7 @@ All report math is in `src/lib/aggregate.ts` and `src/lib/hourly.ts`. Both are p
 
 | Screen | Content |
 | --- | --- |
-| SESSION | One screen without scrolling (from 1280px wide): now tracking, top sites, pixel ring with the scope checkbox, productive time with the − / + goal, background audio, hour-by-hour chart. It covers the current session; the TODAY checkbox widens it to the whole day |
+| SESSION | One screen without scrolling (from 1280px wide): now tracking, top sites, pixel ring with the scope checkbox, productive time with the − / + goal, background audio, hour-by-hour chart. A SESSION / TODAY switch in the header picks the current session or the whole day, stopwatch included |
 | HISTORY | DAY / WEEK / MONTH, each with the ring, productivity, top sites and background audio. DAY adds the hour chart and an activity log with CSV export, WEEK stacked day bars, MONTH a heatmap calendar |
 | SETTINGS | Categories (type, color, limit), site rules with a live URL tester, ignored sites, preferences, your data |
 

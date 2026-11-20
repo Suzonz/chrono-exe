@@ -15,7 +15,7 @@ import { ErrorPanel, Loading } from "@/components/ui/States";
 import { BackgroundAudio, TopSites } from "@/components/report/ReportBlocks";
 import { TimeRing } from "@/components/report/TimeRing";
 import { ProductiveCounter } from "@/components/report/ProductiveCounter";
-import { PixelCheckbox, ScopeToggle } from "@/components/ui/ScopeToggle";
+import { ScopeToggle } from "@/components/ui/ScopeToggle";
 import { HEADER_TOOLS_ID } from "@/components/layout/Header";
 import { useFullDay } from "@/hooks/useFullDay";
 import { useIncludeOutside } from "@/hooks/useIncludeOutside";
@@ -45,18 +45,34 @@ function GetStarted() {
 }
 
 /** The TODAY checkbox, drawn next to the page title in the header. */
-function FullDayToggle({ checked, onChange }: { checked: boolean; onChange: (value: boolean) => void }) {
+const VIEWS = [
+  { fullDay: false, label: "SESSION", title: "Since you pressed play" },
+  { fullDay: true, label: "TODAY", title: "The whole day, compared with yesterday" }
+] as const;
+
+/** SESSION / TODAY switch, drawn in the header in place of the page title. */
+function ViewSwitch({ fullDay, onChange }: { fullDay: boolean; onChange: (value: boolean) => void }) {
   const [target, setTarget] = useState<HTMLElement | null>(null);
   useEffect(() => setTarget(document.getElementById(HEADER_TOOLS_ID)), []);
   if (!target) return null;
   return createPortal(
-    <PixelCheckbox
-      checked={checked}
-      onChange={onChange}
-      label="TODAY"
-      detail={checked ? "Whole day" : "This session only"}
-      title={checked ? "Uncheck to see only the current session (since play)" : "Check to see the whole day"}
-    />,
+    <div className="flex gap-[1px]" role="tablist" aria-label="What the page shows">
+      {VIEWS.map((view) => (
+        <button
+          type="button"
+          role="tab"
+          key={view.label}
+          aria-selected={fullDay === view.fullDay}
+          title={view.title}
+          onClick={() => onChange(view.fullDay)}
+          className={`border border-primary-container px-md py-[6px] text-label ${
+            fullDay === view.fullDay ? "bg-primary-container text-white" : "text-outline hover:bg-surface-container-highest hover:text-on-background"
+          }`}
+        >
+          {view.label}
+        </button>
+      ))}
+    </div>,
     target
   );
 }
@@ -107,7 +123,7 @@ export default function SessionPage() {
   const timer = (
     <Widget
       title="NOW TRACKING"
-      hint="Play starts recording, pause holds it, stop ends it. The category follows the tab you are looking at."
+      hint={`Time recorded ${fullDay ? "today" : "since you pressed play"}, away time included. Play starts a session, pause holds it, stop ends it. The category follows the tab you are looking at.`}
       meta={
         <span className={`inline-flex items-center gap-xs ${running ? "text-secondary-fixed" : paused ? "text-tertiary" : ""}`}>
           <PixelIcon name={running ? "play" : paused ? "pause" : "stop"} size={8} className={running ? "animate-blink" : ""} />
@@ -119,7 +135,7 @@ export default function SessionPage() {
     >
       <div className="flex flex-col items-center gap-md text-center" aria-live="polite">
         <div className={`text-[28px] leading-none 2xl:text-[36px] ${running ? "text-secondary-fixed" : paused ? "text-tertiary" : "text-outline-variant"}`}>
-          {formatDuration(live.run.recordedSeconds)}
+          {formatDuration(fullDay ? live.totalTrackedSeconds + live.idleSeconds : live.run.recordedSeconds)}
         </div>
         <div className="flex min-h-[18px] max-w-full items-center justify-center">
           {running && active && !active.isIdle ? (
@@ -163,7 +179,7 @@ export default function SessionPage() {
 
   return (
     <div className="grid gap-widget-gutter">
-      <FullDayToggle checked={fullDay} onChange={setFullDay} />
+      <ViewSwitch fullDay={fullDay} onChange={setFullDay} />
       {live.lastHeartbeatAt === null ? <GetStarted /> : null}
       {report.error ? <ErrorPanel error={report.error} onRetry={report.reload} /> : null}
 

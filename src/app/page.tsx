@@ -21,6 +21,8 @@ import { useFullDay } from "@/hooks/useFullDay";
 import { useIncludeOutside } from "@/hooks/useIncludeOutside";
 import { DayTimeline } from "@/components/report/DayTimeline";
 import { siteLabel } from "@/lib/glob";
+import { withLiveTime } from "@/lib/liveGroups";
+import { OUTSIDE_CHROME } from "@/lib/scope";
 import { formatClock, formatDuration, todayKey } from "@/lib/time";
 
 function GetStarted() {
@@ -159,11 +161,24 @@ export default function SessionPage() {
   const period = fullDay ? "today" : "this session";
   const sessionStartMs = live.runStartedAt ? new Date(live.runStartedAt).getTime() : now;
 
+  // The session in progress, as a category the ring can grow live (the report lags up to 30s).
+  const ringTotal = includeOutside ? shown.tracked : Math.max(0, shown.tracked - shown.outside);
+  const current =
+    running && active && !active.isIdle && (includeOutside || active.categoryName !== OUTSIDE_CHROME)
+      ? (day?.categories.find((group) => group.category.id === active.categoryId)?.category ?? {
+          id: active.categoryId,
+          name: active.categoryName,
+          color: active.categoryColor,
+          productivity: active.productivity,
+          dailyLimitSeconds: null
+        })
+      : null;
+
   const ring = day ? (
     <TimeRing
       hint={`Your active time ${period} ${includeOutside ? "on the whole computer" : "in Chrome only"}, per category. Hover a slice for details. Time away from the keyboard is not counted.`}
-      groups={day.categories}
-      totalSeconds={includeOutside ? shown.tracked : Math.max(0, shown.tracked - shown.outside)}
+      groups={withLiveTime(day.categories, ringTotal, current)}
+      totalSeconds={ringTotal}
       centerLabel={includeOutside ? "ON YOUR PC" : "IN CHROME"}
       previousSeconds={fullDay ? day.previous.totalTrackedSeconds : undefined}
       previousLabel={fullDay ? "yesterday" : undefined}
